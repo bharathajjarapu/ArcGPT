@@ -1,7 +1,0 @@
-@import 'katex/dist/katex.min.css';
-
-.katex-display {
-  overflow-x: auto;
-  overflow-y: hidden;
-}
-
