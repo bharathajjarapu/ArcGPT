@@ -197,7 +197,7 @@ export const Settings = ({
             <div className="grid gap-4 py-4">
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="system-prompt" className="text-right font-medium">
-                  System Prompt
+                  Prompt
                 </Label>
                 <div className="col-span-3">
                   <Input
