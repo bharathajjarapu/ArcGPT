@@ -28,6 +28,7 @@ export const IMAGE_MODELS = [
 
 // Default text models as fallback
 export const DEFAULT_TEXT_MODELS = [
+  "openai-fast",
   "openai",
   "mistral",
   "mistral-large",

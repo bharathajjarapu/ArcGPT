@@ -182,13 +182,7 @@ const MarkdownImage = ({ src, alt, ...props }: React.ImgHTMLAttributes<HTMLImage
   )
 }
 
-const InlineMath = ({ value }: { value: string }) => (
-  <span className="inline-block align-middle">
-    <Suspense fallback={<span>Loading math...</span>}>
-      <span dangerouslySetInnerHTML={{ __html: value }} />
-    </Suspense>
-  </span>
-)
+
 
 const COMPONENTS = {
   h1: withClass("h1", "text-2xl font-semibold"),
@@ -237,13 +231,25 @@ const COMPONENTS = {
   hr: withClass("hr", "border-foreground/20"),
   img: (props) => <MarkdownImage {...props} />,
   math: ({ value }: { value: string }) => (
-    <div className="my-4">
+    <div className="my-6 text-center">
       <Suspense fallback={<div>Loading math...</div>}>
-        <div dangerouslySetInnerHTML={{ __html: value }} />
+        <div 
+          className="katex-display"
+          dangerouslySetInnerHTML={{ __html: value }} 
+        />
       </Suspense>
     </div>
   ),
-  inlineMath: ({ value }: { value: string }) => <InlineMath value={value} />,
+  inlineMath: ({ value }: { value: string }) => (
+    <span className="inline-block align-middle">
+      <Suspense fallback={<span>Loading math...</span>}>
+        <span 
+          className="katex"
+          dangerouslySetInnerHTML={{ __html: value }} 
+        />
+      </Suspense>
+    </span>
+  ),
 }
 
 function withClass(Tag: keyof JSX.IntrinsicElements, classes: string) {
