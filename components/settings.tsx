@@ -189,14 +189,7 @@ export const Settings = ({
                     placeholder="Enter your name..."
                   />
               </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label className="text-right font-medium text-gray-400">
-                  Profile
-                </Label>
-                <div className="col-span-3 text-sm text-gray-400">
-                  This name will be used in greetings and personalization
-                </div>
-              </div>
+
             </div>
           </TabsContent>
 
