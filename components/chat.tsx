@@ -40,7 +40,7 @@ export default function Chat({ isOpen, setIsOpen, activeChatId, onFork }: ChatPr
   const [greeting, setGreeting] = useState("")
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [systemPrompt, setSystemPrompt] = useState("")
-  const [selectedTextModel, setSelectedTextModel] = useState(() => localStorage.getItem("textModel") || "pi")
+  const [selectedTextModel, setSelectedTextModel] = useState(() => localStorage.getItem("textModel") || "openai-fast")
   const [selectedImageModel, setSelectedImageModel] = useState(() => localStorage.getItem("imageModel") || "flux")
 
   const textareaRef = useRef<HTMLTextAreaElement>(null)
@@ -72,11 +72,13 @@ export default function Chat({ isOpen, setIsOpen, activeChatId, onFork }: ChatPr
       setSelectedImageModel(savedImageModel)
     }
 
-    const baseSystemPrompt = savedSystemPrompt || `You are an AI assistant named Arc. You help user with your queries. Respond to User only in Markdown.
+    const baseSystemPrompt = `You are an AI assistant named Arc. You help user with your queries. Respond to User only in Markdown.
     If asked for equations use like the following equation. $$ L = \frac{1}{2} \rho v^2 S C_L $$ . Make sure to one extra line space before and after the equation.
     If asked to make or generate or show an image, Embed the Prompt of Image in Markdown Like ![](https://pollinations.ai/p/A%20Car%20in%20a%20Lake?width=1280&height=720&nologo=true&model=${selectedImageModel}) 
       Current time: ${formattedTime}
-      Current date: ${formattedDate}`
+      Current date: ${formattedDate}
+      
+      ${savedSystemPrompt || ''}`
 
     const systemMessage: Message = {
       id: "init",
@@ -132,7 +134,7 @@ export default function Chat({ isOpen, setIsOpen, activeChatId, onFork }: ChatPr
 
       try {
         const messagesToSend = [
-          systemPrompt || conversationHistory[0].content,
+          conversationHistory[0].content,
           ...updatedConversationHistory.slice(1).map((msg) => msg.content),
         ]
 
@@ -192,6 +194,9 @@ export default function Chat({ isOpen, setIsOpen, activeChatId, onFork }: ChatPr
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === "imageModel") {
         setSelectedImageModel(e.newValue || "flux")
+      }
+      if (e.key === "textModel") {
+        setSelectedTextModel(e.newValue || "openai-fast")
       }
       if (e.key === "profileName") {
         const { currentGreeting } = getCurrentTimeAndDate()
@@ -267,8 +272,8 @@ export default function Chat({ isOpen, setIsOpen, activeChatId, onFork }: ChatPr
           </Button>
         </div>
       </header>
-      <ScrollArea className="flex-1 p-4 pt-0 pb-0">
-        <div className="mb-20 pb-1 max-w-4xl mx-auto">
+      <ScrollArea className="flex-1 p-4 pt-4 pb-0">
+        <div className="mb-20 pb-1 max-w-4xl mx-auto pt-4">
           {conversationHistory.length <= 1 && <PromptSuggestions greeting={greeting} onSelect={handlePromptSelect} />}
           {conversationHistory
             .filter((message) => message.role !== "system")
