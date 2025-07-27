@@ -181,15 +181,14 @@ export const Settings = ({
                 <Label htmlFor="name" className="text-right font-medium">
                   Full Name
                 </Label>
-                                  <Input
-                    id="name"
-                    value={localProfileName}
-                    onChange={(e) => setLocalProfileName(e.target.value)}
-                    className={`col-span-3 ${getFocusRingClass()}`}
-                    placeholder="Enter your name..."
-                  />
+                <Input
+                  id="name"
+                  value={localProfileName}
+                  onChange={(e) => setLocalProfileName(e.target.value)}
+                  className={`col-span-3 ${getFocusRingClass()}`}
+                  placeholder="Enter your name..."
+                />
               </div>
-
             </div>
           </TabsContent>
 
