@@ -72,7 +72,7 @@ export default function Chat({ isOpen, setIsOpen, activeChatId, onFork }: ChatPr
       setSelectedImageModel(savedImageModel)
     }
 
-    const initialSystemPrompt = `You are an AI assistant named Arc. You help user with your queries. Respond to User only in Markdown.
+    const baseSystemPrompt = savedSystemPrompt || `You are an AI assistant named Arc. You help user with your queries. Respond to User only in Markdown.
     If asked for equations use like the following equation. $$ L = \frac{1}{2} \rho v^2 S C_L $$ . Make sure to one extra line space before and after the equation.
     If asked to make or generate or show an image, Embed the Prompt of Image in Markdown Like ![](https://pollinations.ai/p/A%20Car%20in%20a%20Lake?width=1280&height=720&nologo=true&model=${selectedImageModel}) 
       Current time: ${formattedTime}
@@ -80,7 +80,7 @@ export default function Chat({ isOpen, setIsOpen, activeChatId, onFork }: ChatPr
 
     const systemMessage: Message = {
       id: "init",
-      content: savedSystemPrompt + initialSystemPrompt,
+      content: baseSystemPrompt,
       role: "system",
     }
 
