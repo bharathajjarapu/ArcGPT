@@ -221,30 +221,48 @@ export function Onboarding({ onComplete }: { onComplete: () => void }) {
           </motion.div>
         )}
         {step === 3 && (
-          <div className="space-y-4">
-            <Label className="text-white">Choose an Image Model</Label>
-            <div className="flex flex-wrap gap-2">
+          <motion.div 
+            className="space-y-6"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+          >
+            <div className="text-center">
+              <Label className="text-white text-lg font-semibold">Choose Your Image Model</Label>
+              <p className="text-gray-400 text-sm mt-2">Select the AI model for image generation</p>
+            </div>
+            <div className="grid grid-cols-3 gap-3">
               {IMAGE_MODELS.map((model) => (
-                <Button
+                <motion.button
                   key={model}
-                  variant={imageModel === model ? "default" : "outline"}
                   onClick={() => setImageModel(model)}
-                  className="rounded-md"
+                  className={`p-4 rounded-xl border-2 transition-all duration-300 ${
+                    imageModel === model
+                      ? 'border-blue-500 bg-blue-500/10 text-white'
+                      : 'border-zinc-700 bg-zinc-800/50 text-gray-300 hover:border-zinc-600 hover:bg-zinc-800/70'
+                  }`}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
                 >
-                  {model}
-                </Button>
+                  <div className="font-semibold text-sm">{model}</div>
+                </motion.button>
               ))}
             </div>
-          </div>
+          </motion.div>
         )}
         {step === 4 && (
-          <div className="space-y-6">
+          <motion.div 
+            className="space-y-6"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+          >
             <div className="text-center">
               <Label className="text-white text-lg font-semibold">Choose Your Theme</Label>
               <p className="text-gray-400 text-sm mt-2">Personalize your ArcGPT experience</p>
             </div>
             <div className="grid grid-cols-4 gap-3">
-              {THEME_COLORS.map((theme) => (
+              {THEME_COLORS.map((theme, index) => (
                 <motion.button
                   key={theme.value}
                   onClick={() => setSelectedTheme(theme.value)}
@@ -256,6 +274,9 @@ export function Onboarding({ onComplete }: { onComplete: () => void }) {
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   title={theme.name}
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: index * 0.1, duration: 0.3 }}
                 >
                   <motion.div
                     className="flex items-center justify-center h-full"
@@ -287,8 +308,13 @@ export function Onboarding({ onComplete }: { onComplete: () => void }) {
                 </motion.button>
               ))}
             </div>
-            <div className="text-center">
-              <p className="text-gray-400 text-xs">
+            <motion.div 
+              className="text-center"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.5 }}
+            >
+              <p className="text-gray-400 text-sm font-medium">
                 {selectedTheme === 'blue' && "Classic and professional"}
                 {selectedTheme === 'red' && "Bold and energetic"}
                 {selectedTheme === 'green' && "Fresh and natural"}
@@ -298,8 +324,8 @@ export function Onboarding({ onComplete }: { onComplete: () => void }) {
                 {selectedTheme === 'teal' && "Calm and balanced"}
                 {selectedTheme === 'indigo' && "Deep and sophisticated"}
               </p>
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
         )}
         <div className="mt-8 space-y-4">
           {/* Step indicators */}
