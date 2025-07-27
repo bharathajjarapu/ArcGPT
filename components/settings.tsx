@@ -19,7 +19,15 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-export const TEXT_MODELS = [
+export const IMAGE_MODELS = [
+  "flux",
+  "kontext", 
+  "gptimage",
+  "turbo",
+];
+
+// Default text models as fallback
+export const DEFAULT_TEXT_MODELS = [
   "openai",
   "mistral",
   "mistral-large",
@@ -29,17 +37,6 @@ export const TEXT_MODELS = [
   "evil",
   "qwen-coder",
   "p1",
-];
-
-export const IMAGE_MODELS = [
-  "flux",
-  "flux-realism",
-  "flux-cablyai",
-  "flux-anime",
-  "flux-3d",
-  "any-dark",
-  "flux-pro",
-  "turbo",
 ];
 
 interface SettingsProps {
@@ -72,6 +69,8 @@ export const Settings = ({
   const [localSystemPrompt, setLocalSystemPrompt] = useState(systemPrompt);
   const [localTextModel, setLocalTextModel] = useState(selectedTextModel);
   const [localImageModel, setLocalImageModel] = useState(selectedImageModel);
+  const [textModels, setTextModels] = useState<string[]>(DEFAULT_TEXT_MODELS);
+  const [isLoadingModels, setIsLoadingModels] = useState(false);
 
   useEffect(() => {
     setLocalProfileName(profileName);
@@ -79,6 +78,28 @@ export const Settings = ({
     setLocalTextModel(selectedTextModel);
     setLocalImageModel(selectedImageModel);
   }, [isOpen, profileName, systemPrompt, selectedTextModel, selectedImageModel]);
+
+  useEffect(() => {
+    const fetchModels = async () => {
+      setIsLoadingModels(true);
+      try {
+        const response = await fetch('/api/models');
+        if (response.ok) {
+          const data = await response.json();
+          if (data && Array.isArray(data)) {
+            setTextModels(data.map((model: any) => model.name || model));
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching models:', error);
+        // Keep default models as fallback
+      } finally {
+        setIsLoadingModels(false);
+      }
+    };
+
+    fetchModels();
+  }, []);
 
   const handleSaveSettings = () => {
     setProfileName(localProfileName);
@@ -147,12 +168,13 @@ export const Settings = ({
                 <Select
                   value={localTextModel}
                   onValueChange={setLocalTextModel}
+                  disabled={isLoadingModels}
                 >
                   <SelectTrigger className="col-span-3">
-                    <SelectValue placeholder="Select text model" />
+                    <SelectValue placeholder={isLoadingModels ? "Loading models..." : "Select text model"} />
                   </SelectTrigger>
                   <SelectContent>
-                    {TEXT_MODELS.map((model) => (
+                    {textModels.map((model) => (
                       <SelectItem key={model} value={model}>
                         {model}
                       </SelectItem>
