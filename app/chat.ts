@@ -30,7 +30,7 @@ export async function sendMessage(conversationHistory: string[], textModel: stri
       },
       body: JSON.stringify({
         messages: conversationHistory.map((message, index) => ({
-          role: index === 0 ? 'system': message.role === 'user' ? 'user' : 'system', 
+          role: index === 0 ? 'system': 'user', 
           content: message,
         })),
         model: textModel,

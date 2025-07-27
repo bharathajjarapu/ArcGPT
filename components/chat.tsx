@@ -42,6 +42,7 @@ export default function Chat({ isOpen, setIsOpen, activeChatId, onFork }: ChatPr
   const [systemPrompt, setSystemPrompt] = useState("")
   const [selectedTextModel, setSelectedTextModel] = useState(() => localStorage.getItem("textModel") || "openai-fast")
   const [selectedImageModel, setSelectedImageModel] = useState(() => localStorage.getItem("imageModel") || "flux")
+  const [selectedTheme, setSelectedTheme] = useState(() => localStorage.getItem("theme") || "blue")
 
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
@@ -61,6 +62,7 @@ export default function Chat({ isOpen, setIsOpen, activeChatId, onFork }: ChatPr
     const savedSystemPrompt = localStorage.getItem("systemPrompt")
     const savedTextModel = localStorage.getItem("textModel")
     const savedImageModel = localStorage.getItem("imageModel")
+    const savedTheme = localStorage.getItem("theme")
 
     if (savedSystemPrompt) {
       setSystemPrompt(savedSystemPrompt)
@@ -71,14 +73,33 @@ export default function Chat({ isOpen, setIsOpen, activeChatId, onFork }: ChatPr
     if (savedImageModel) {
       setSelectedImageModel(savedImageModel)
     }
+    if (savedTheme) {
+      setSelectedTheme(savedTheme)
+    }
 
-    const baseSystemPrompt = `You are an AI assistant named Arc. You help user with your queries. Respond to User only in Markdown.
-    If asked for equations use like the following equation. $$ L = \frac{1}{2} \rho v^2 S C_L $$ . Make sure to one extra line space before and after the equation.
-    If asked to make or generate or show an image, Embed the Prompt of Image in Markdown Like ![](https://pollinations.ai/p/A%20Car%20in%20a%20Lake?width=1280&height=720&nologo=true&model=${selectedImageModel}) 
-      Current time: ${formattedTime}
-      Current date: ${formattedDate}
-      
-      ${savedSystemPrompt || ''}`
+    const baseSystemPrompt = `You are an AI assistant named Arc. You help users with their queries. Respond to users only in Markdown format.
+
+IMPORTANT IMAGE GENERATION FORMATTING RULES:
+- When asked to generate, create, make, or show an image, ALWAYS use this exact format:
+  ![Generated Image](https://pollinations.ai/p/${encodeURIComponent('{PROMPT}')}?width=512&height=512&nologo=true&model=${selectedImageModel})
+- Replace {PROMPT} with the actual image description
+- Always use 512x512 dimensions for consistency
+- Never use any other image format or URL structure
+- If the user asks for multiple images, create separate markdown image blocks for each
+
+EQUATION FORMATTING:
+- For mathematical equations, use LaTeX format with double dollar signs
+- Add one extra line space before and after equations
+- Example: $$ L = \frac{1}{2} \rho v^2 S C_L $$
+
+CODE FORMATTING:
+- Use triple backticks with language specification for code blocks
+- Example: \`\`\`javascript\n// your code here\n\`\`\`
+
+Current time: ${formattedTime}
+Current date: ${formattedDate}
+
+${savedSystemPrompt || ''}`
 
     const systemMessage: Message = {
       id: "init",
@@ -198,6 +219,9 @@ export default function Chat({ isOpen, setIsOpen, activeChatId, onFork }: ChatPr
       if (e.key === "textModel") {
         setSelectedTextModel(e.newValue || "openai-fast")
       }
+      if (e.key === "theme") {
+        setSelectedTheme(e.newValue || "blue")
+      }
       if (e.key === "profileName") {
         const { currentGreeting } = getCurrentTimeAndDate()
         setGreeting(`${currentGreeting} ${e.newValue || "User"}`)
@@ -211,6 +235,34 @@ export default function Chat({ isOpen, setIsOpen, activeChatId, onFork }: ChatPr
   }, [])
 
   const [isListening, setIsListening] = useState(false)
+
+  const getThemeClasses = () => {
+    const themeMap: { [key: string]: string } = {
+      blue: "bg-blue-600 hover:bg-blue-700",
+      red: "bg-red-600 hover:bg-red-700",
+      green: "bg-green-600 hover:bg-green-700",
+      purple: "bg-purple-600 hover:bg-purple-700",
+      orange: "bg-orange-600 hover:bg-orange-700",
+      pink: "bg-pink-600 hover:bg-pink-700",
+      teal: "bg-teal-600 hover:bg-teal-700",
+      indigo: "bg-indigo-600 hover:bg-indigo-700",
+    }
+    return themeMap[selectedTheme] || themeMap.blue
+  }
+
+  const getFocusRingClass = () => {
+    const focusMap: { [key: string]: string } = {
+      blue: "focus:ring-blue-500/50",
+      red: "focus:ring-red-500/50",
+      green: "focus:ring-green-500/50",
+      purple: "focus:ring-purple-500/50",
+      orange: "focus:ring-orange-500/50",
+      pink: "focus:ring-pink-500/50",
+      teal: "focus:ring-teal-500/50",
+      indigo: "focus:ring-indigo-500/50",
+    }
+    return focusMap[selectedTheme] || focusMap.blue
+  }
 
   const startListening = () => {
     if ("webkitSpeechRecognition" in window) {
@@ -293,7 +345,7 @@ export default function Chat({ isOpen, setIsOpen, activeChatId, onFork }: ChatPr
                     <div
                       className={cn(
                         "min-w-[32px] min-h-[32px] w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0",
-                        message.role === "user" ? "bg-blue-600" : "bg-zinc-800",
+                        message.role === "user" ? getThemeClasses().split(' ')[0] : "bg-zinc-800",
                       )}
                     >
                       {message.role === "user" ? (
@@ -309,7 +361,7 @@ export default function Chat({ isOpen, setIsOpen, activeChatId, onFork }: ChatPr
                     <div
                       className={cn(
                         "group relative p-3 rounded-2xl",
-                        message.role === "user" ? "bg-blue-600 text-white" : "bg-zinc-800 text-white",
+                        message.role === "user" ? `${getThemeClasses().split(' ')[0]} text-white` : "bg-zinc-800 text-white",
                       )}
                     >
                       {message.role === "user" ? (
@@ -346,7 +398,7 @@ export default function Chat({ isOpen, setIsOpen, activeChatId, onFork }: ChatPr
           )}
           <div ref={messagesEndRef} />
         </div>
-        <div className="fixed bottom-0 left-0 right-0 p-4 pt-0 max-w-4xl mx-auto w-full z-10">
+        <div className="fixed bottom-0 left-0 right-0 p-4 pt-0 pb-6 max-w-4xl mx-auto w-full z-10">
           <div className="relative flex items-center">
             <textarea
               ref={textareaRef}
@@ -359,7 +411,7 @@ export default function Chat({ isOpen, setIsOpen, activeChatId, onFork }: ChatPr
                 }
               }}
               placeholder="Message Arc"
-              className="w-full bg-gray-900/30 backdrop-blur-lg rounded-2xl pl-4 pr-24 py-4 focus:outline-none focus:ring-1 focus:ring-blue-500/50 resize-none min-h-[56px] border border-gray-800/40 shadow-lg"
+              className={`w-full bg-gray-900/30 backdrop-blur-lg rounded-2xl pl-4 pr-24 py-4 focus:outline-none focus:ring-1 resize-none min-h-[56px] border border-gray-800/40 shadow-lg ${getFocusRingClass()}`}
               style={{ scrollbarWidth: "none" }}
               rows={1}
             />
@@ -374,7 +426,7 @@ export default function Chat({ isOpen, setIsOpen, activeChatId, onFork }: ChatPr
               </Button>
               <Button
                 onClick={() => handleSendMessage(input)}
-                className="h-10 w-10 flex items-center justify-center rounded-lg bg-blue-600 p-2 hover:bg-blue-700 transition-colors"
+                className={`h-10 w-10 flex items-center justify-center rounded-lg p-2 transition-colors ${getThemeClasses()}`}
                 disabled={!input.trim() || isLoading}
               >
                 <ArrowUp className="h-5 w-5" />
@@ -399,6 +451,8 @@ export default function Chat({ isOpen, setIsOpen, activeChatId, onFork }: ChatPr
           const { currentGreeting } = getCurrentTimeAndDate()
           setGreeting(`${currentGreeting} ${name}`)
         }}
+        selectedTheme={selectedTheme}
+        setSelectedTheme={setSelectedTheme}
       />
     </div>
   )

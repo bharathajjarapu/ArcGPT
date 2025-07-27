@@ -118,7 +118,7 @@ const CodeBlock = ({
       </Suspense>
 
       <div className="invisible absolute right-2 top-2 flex space-x-1 rounded-lg p-1 opacity-0 transition-all duration-200 group-hover/code:visible group-hover/code:opacity-100">
-        <CopyButton content={code} copyMessage="Copied code to clipboard" />
+        <CopyButton value={code} />
       </div>
     </div>
   )
@@ -144,7 +144,7 @@ function childrenTakeAllStringContents(element: any): string {
   return ""
 }
 
-const MarkdownImage = ({ src, alt, ...props }: React.ImgHTMLAttributes<HTMLImageElement>) => {
+const MarkdownImage = ({ src, alt, width, height, ...props }: React.ImgHTMLAttributes<HTMLImageElement>) => {
   const [isLoading, setIsLoading] = useState(true)
 
   return (
@@ -162,7 +162,6 @@ const MarkdownImage = ({ src, alt, ...props }: React.ImgHTMLAttributes<HTMLImage
         height={400}
         className="rounded-md"
         onLoadingComplete={() => setIsLoading(false)}
-        {...props}
       />
       
       <span className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -229,7 +228,7 @@ const COMPONENTS = {
   tr: withClass("tr", "m-0 border-t p-0 even:bg-muted"),
   p: withClass("p", "whitespace-pre-wrap"),
   hr: withClass("hr", "border-foreground/20"),
-  img: (props) => <MarkdownImage {...props} />,
+  img: (props: any) => <MarkdownImage {...props} />,
   math: ({ value }: { value: string }) => (
     <div className="my-6 text-center">
       <Suspense fallback={<div>Loading math...</div>}>
