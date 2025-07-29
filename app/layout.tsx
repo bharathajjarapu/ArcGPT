@@ -1,6 +1,8 @@
 import './globals.css'
 import '../styles/katex.css'
 import { Inter } from 'next/font/google'
+import { ThemeProvider } from 'next-themes'
+import { ThemeColorProvider } from '@/lib/theme-context'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -19,9 +21,18 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" className="dark">
+    <html lang="en" suppressHydrationWarning>
       <body className={`${inter.className} bg-black text-white`}>
-        {children}
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="dark"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <ThemeColorProvider>
+            {children}
+          </ThemeColorProvider>
+        </ThemeProvider>
       </body>
     </html>
   )

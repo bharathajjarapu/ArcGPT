@@ -5,6 +5,8 @@ import { ChatTab } from '@/types/chat'
 import { MessageSquare, PlusCircle, Pencil, Trash } from 'lucide-react'
 import { useState } from 'react'
 import { cn } from "@/lib/utils"
+import { useThemeContext } from "@/lib/theme-context"
+import { getThemeColor } from "@/lib/theme-colors"
 
 type SidebarProps = {
   isOpen: boolean
@@ -25,6 +27,8 @@ export default function Sidebar({
   editChatName,
   deleteChat
 }: SidebarProps) {
+  const { themeColor } = useThemeContext();
+  const themeColorConfig = getThemeColor(themeColor);
   const [editingId, setEditingId] = useState<string | null>(null)
 
   const handleEditSubmit = (id: string, value: string) => {
@@ -42,8 +46,7 @@ export default function Sidebar({
       <div className="p-3">
         <Button 
           onClick={addNewChat} 
-          variant="outline" 
-          className="w-full justify-start gap-2 text-white"
+          className={`w-full justify-start gap-2 text-white ${themeColorConfig.primary} ${themeColorConfig.hover}`}
         >
           <PlusCircle className="h-4 w-4" />
           Chat
@@ -56,7 +59,7 @@ export default function Sidebar({
               key={chat.id}
               className={cn(
                 "group flex items-center justify-between rounded-lg px-2 py-2 text-sm transition-colors hover:bg-accent cursor-pointer w-full",
-                chat.id === activeChatId && "bg-accent"
+                chat.id === activeChatId && `${themeColorConfig.primary} bg-opacity-20`
               )}
               onClick={() => setActiveChatId(chat.id)}
             >

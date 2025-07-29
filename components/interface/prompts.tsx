@@ -1,6 +1,8 @@
 "use client"
 
 import { useState, useEffect } from 'react';
+import { useThemeContext } from '@/lib/theme-context';
+import { getThemeColor } from '@/lib/theme-colors';
 
 const PROMPT_SUGGESTIONS = [
   "Make an Image of close-up portrait of Hacker",
@@ -18,7 +20,10 @@ export function PromptSuggestions({ greeting, onSelect }: {
   greeting: string
   onSelect: (text: string) => void 
 }) {
+  const { themeColor } = useThemeContext();
+  const themeColorConfig = getThemeColor(themeColor);
   const [isMobile, setIsMobile] = useState(false);
+  
   useEffect(() => {
     const handleResize = () => {
       setIsMobile(window.innerWidth < 768);
@@ -27,9 +32,11 @@ export function PromptSuggestions({ greeting, onSelect }: {
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+  
   if (isMobile) {
     return null;
   }
+  
   return (
     <div className="pt-20 pl-20 pr-20">
       <h2 className="text-5xl font-bold text-center mb-4">
@@ -40,7 +47,7 @@ export function PromptSuggestions({ greeting, onSelect }: {
           <button
             key={index}
             onClick={() => onSelect(suggestion)}
-            className="h-max flex-1 rounded-xl border bg-background p-4 hover:bg-muted border-gray-700/50"
+            className={`h-max flex-1 rounded-xl border bg-background p-4 hover:bg-muted border-gray-700/50 hover:${themeColorConfig.primary} hover:bg-opacity-10 transition-colors`}
           >
             {suggestion}
           </button>

@@ -7,8 +7,9 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { IMAGE_MODELS, DEFAULT_TEXT_MODELS } from '@/components/settings'
+import { THEME_COLORS, ThemeColor, DEFAULT_THEME_COLOR } from '@/lib/theme-colors'
 
-const steps = ['name', 'systemPrompt', 'textModel', 'imageModel']
+const steps = ['name', 'systemPrompt', 'textModel', 'imageModel', 'themeColor']
 
 const systemPromptOptions = [
   {
@@ -36,6 +37,7 @@ export function Onboarding({ onComplete }: { onComplete: () => void }) {
   const [customSystemPrompt, setCustomSystemPrompt] = useState('')
   const [textModel, setTextModel] = useState('')
   const [imageModel, setImageModel] = useState('')
+  const [themeColor, setThemeColor] = useState<ThemeColor>(DEFAULT_THEME_COLOR)
   const [textModels, setTextModels] = useState<string[]>(DEFAULT_TEXT_MODELS)
   const [isLoadingModels, setIsLoadingModels] = useState(false)
 
@@ -67,6 +69,7 @@ export function Onboarding({ onComplete }: { onComplete: () => void }) {
     localStorage.setItem('systemPrompt', finalSystemPrompt)
     localStorage.setItem('textModel', textModel)
     localStorage.setItem('imageModel', imageModel)
+    localStorage.setItem('themeColor', themeColor)
     localStorage.setItem('onboardingComplete', 'true')
     onComplete()
   }
@@ -92,6 +95,7 @@ export function Onboarding({ onComplete }: { onComplete: () => void }) {
       case 1: return systemPrompt !== "" || customSystemPrompt.trim() !== ''
       case 2: return textModel !== ''
       case 3: return imageModel !== ''
+      case 4: return true
       default: return false
     }
   }
@@ -182,6 +186,29 @@ export function Onboarding({ onComplete }: { onComplete: () => void }) {
                 </Button>
               ))}
             </div>
+          </div>
+        )}
+        {step === 4 && (
+          <div className="space-y-4">
+            <Label className="text-white">Choose Your Theme Color</Label>
+            <div className="grid grid-cols-4 gap-3">
+              {THEME_COLORS.map((color) => (
+                <Button
+                  key={color.value}
+                  variant={themeColor === color.value ? "default" : "outline"}
+                  onClick={() => setThemeColor(color.value)}
+                  className={`h-12 w-full ${color.primary} hover:${color.hover} border-2 ${
+                    themeColor === color.value ? 'ring-2 ring-white' : ''
+                  }`}
+                  style={{ backgroundColor: color.value === themeColor ? undefined : 'transparent' }}
+                >
+                  <div className={`w-6 h-6 rounded-full ${color.primary}`}></div>
+                </Button>
+              ))}
+            </div>
+            <p className="text-sm text-zinc-400 text-center">
+              This color will be used throughout the app for buttons and accents
+            </p>
           </div>
         )}
         <Button

@@ -25,6 +25,8 @@ import { PromptSuggestions } from "@/components/interface/prompts"
 import { MarkdownRenderer } from "@/components/interface/markdown"
 import { getCurrentTimeAndDate } from "@/app/time"
 import { Settings } from "./settings"
+import { useThemeContext } from "@/lib/theme-context"
+import { getThemeColor } from "@/lib/theme-colors"
 
 type ChatProps = {
   isOpen: boolean
@@ -36,6 +38,9 @@ type ChatProps = {
 }
 
 export default function Chat({ isOpen, setIsOpen, activeChatId, onFork, chatTabs, setChatTabs }: ChatProps) {
+  const { themeColor } = useThemeContext();
+  const themeColorConfig = getThemeColor(themeColor);
+  
   const [conversationHistory, setConversationHistory] = useState<Message[]>([])
   const [input, setInput] = useState("")
   const [isLoading, setIsLoading] = useState(false)
@@ -295,7 +300,7 @@ export default function Chat({ isOpen, setIsOpen, activeChatId, onFork, chatTabs
                     <div
                       className={cn(
                         "min-w-[32px] min-h-[32px] w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0",
-                        message.role === "user" ? "bg-blue-600" : "bg-zinc-800",
+                        message.role === "user" ? themeColorConfig.primary : "bg-zinc-800",
                       )}
                     >
                       {message.role === "user" ? (
@@ -311,7 +316,7 @@ export default function Chat({ isOpen, setIsOpen, activeChatId, onFork, chatTabs
                     <div
                       className={cn(
                         "group relative p-3 rounded-2xl",
-                        message.role === "user" ? "bg-blue-600 text-white" : "bg-zinc-800 text-white",
+                        message.role === "user" ? `${themeColorConfig.primary} text-white` : "bg-zinc-800 text-white",
                       )}
                     >
                       {message.role === "user" ? (
@@ -361,7 +366,7 @@ export default function Chat({ isOpen, setIsOpen, activeChatId, onFork, chatTabs
                 }
               }}
               placeholder="Message Arc"
-              className="w-full bg-gray-900/30 backdrop-blur-lg rounded-2xl pl-4 pr-24 py-4 focus:outline-none focus:ring-1 focus:ring-blue-500/50 resize-none min-h-[56px] border border-gray-800/40 shadow-lg"
+              className={`w-full bg-gray-900/30 backdrop-blur-lg rounded-2xl pl-4 pr-24 py-4 focus:outline-none focus:ring-1 ${themeColorConfig.ring} resize-none min-h-[56px] border border-gray-800/40 shadow-lg`}
               style={{ scrollbarWidth: "none" }}
               rows={1}
             />
@@ -376,7 +381,7 @@ export default function Chat({ isOpen, setIsOpen, activeChatId, onFork, chatTabs
               </Button>
               <Button
                 onClick={() => handleSendMessage(input)}
-                className="h-10 w-10 flex items-center justify-center rounded-lg bg-blue-600 p-2 hover:bg-blue-700 transition-colors"
+                className={`h-10 w-10 flex items-center justify-center rounded-lg ${themeColorConfig.primary} ${themeColorConfig.hover} transition-colors`}
                 disabled={!input.trim() || isLoading}
               >
                 <ArrowUp className="h-5 w-5" />

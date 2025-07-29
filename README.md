@@ -6,6 +6,7 @@ A modern looking Local AI chat interface powered by Pollinations.AI, built with 
 ## ✨ Features
 
 - 🎨 Beautiful dark mode interface with ShadcN UI
+- 🌈 Customizable theme colors with 8 color options
 - 💬 Real-time chat with AI powered by Pollinations.AI
 - 🖼️ Image generation with multiple models
 - 📝 Markdown support with math equations
@@ -13,6 +14,7 @@ A modern looking Local AI chat interface powered by Pollinations.AI, built with 
 - 💾 Local storage for chat history
 - 📱 Responsive design
 - 🔄 Chat forking and management
+- ⚙️ Comprehensive settings management
 - ⚡ Built with Next.js 14 for optimal performance
 
 ## 🛠️ Tech Stack
@@ -25,6 +27,7 @@ A modern looking Local AI chat interface powered by Pollinations.AI, built with 
 - **Markdown:** React Markdown + KaTeX 
 - **Code Highlighting:** Shiki 
 - **Icons:** Lucide Icons 
+- **Theme Management:** next-themes
 
 ## 🚀 Getting Started
 
@@ -37,7 +40,23 @@ ArcGPT uses Pollinations.AI's LLM API to provide:
 - 🤖 Text Generation: Multiple models including OpenAI, Mistral, and more
 - 🎨 Image Generation: Various models like Flux, Turbo, and specialized options
 - 📊 Math & Code Support: Beautiful equation rendering and code highlighting
-- 🔄 Context Management: Smart conversation handling with system prompts.
+- 🔄 Context Management: Smart conversation handling with system prompts
+- 🌈 Theme Customization: Choose from 8 beautiful color themes
+
+## 🎨 Theme Colors
+
+ArcGPT now supports 8 different theme colors that you can choose from during onboarding or in the settings:
+
+- 🔵 Blue (Default)
+- 🟣 Purple
+- 🟢 Green
+- 🔴 Red
+- 🟠 Orange
+- 🩷 Pink
+- 🔷 Indigo
+- 🟦 Teal
+
+The selected theme color is applied throughout the interface, including buttons, user messages, and interactive elements.
 
 ## 🤝 Contributing
 

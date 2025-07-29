@@ -18,8 +18,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Download, Upload, AlertCircle } from "lucide-react";
+import { Download, Upload, AlertCircle, Palette } from "lucide-react";
 import { ChatTab } from '@/types/chat';
+import { THEME_COLORS, ThemeColor, DEFAULT_THEME_COLOR, getThemeColor } from '@/lib/theme-colors';
+import { useThemeContext } from '@/lib/theme-context';
 
 export const IMAGE_MODELS = [
   "flux",
@@ -71,11 +73,13 @@ export const Settings = ({
   chatTabs,
   setChatTabs,
 }: SettingsProps) => {
+  const { themeColor, setThemeColor } = useThemeContext();
   const [activeTab, setActiveTab] = useState("profile");
   const [localProfileName, setLocalProfileName] = useState(profileName);
   const [localSystemPrompt, setLocalSystemPrompt] = useState(systemPrompt);
   const [localTextModel, setLocalTextModel] = useState(selectedTextModel);
   const [localImageModel, setLocalImageModel] = useState(selectedImageModel);
+  const [localThemeColor, setLocalThemeColor] = useState<ThemeColor>(themeColor);
   const [textModels, setTextModels] = useState<string[]>(DEFAULT_TEXT_MODELS);
   const [isLoadingModels, setIsLoadingModels] = useState(false);
   const [importError, setImportError] = useState<string | null>(null);
@@ -85,7 +89,8 @@ export const Settings = ({
     setLocalSystemPrompt(systemPrompt);
     setLocalTextModel(selectedTextModel);
     setLocalImageModel(selectedImageModel);
-  }, [isOpen, profileName, systemPrompt, selectedTextModel, selectedImageModel]);
+    setLocalThemeColor(themeColor);
+  }, [isOpen, profileName, systemPrompt, selectedTextModel, selectedImageModel, themeColor]);
 
   useEffect(() => {
     const fetchModels = async () => {
@@ -114,10 +119,12 @@ export const Settings = ({
     setSystemPrompt(localSystemPrompt);
     setSelectedTextModel(localTextModel);
     setSelectedImageModel(localImageModel);
+    setThemeColor(localThemeColor);
     localStorage.setItem("profileName", localProfileName);
     localStorage.setItem("systemPrompt", localSystemPrompt);
     localStorage.setItem("textModel", localTextModel);
     localStorage.setItem("imageModel", localImageModel);
+    localStorage.setItem("themeColor", localThemeColor);
     toast.success("Settings saved successfully.");
     setIsOpen(false);
   };
@@ -132,6 +139,7 @@ export const Settings = ({
           systemPrompt: localStorage.getItem("systemPrompt") || "",
           textModel: localStorage.getItem("textModel") || "openai-fast",
           imageModel: localStorage.getItem("imageModel") || "flux",
+          themeColor: localStorage.getItem("themeColor") || "blue",
         },
         exportDate: new Date().toISOString(),
         version: "1.0"
@@ -194,6 +202,10 @@ export const Settings = ({
           localStorage.setItem("imageModel", importData.settings.imageModel);
           setSelectedImageModel(importData.settings.imageModel);
         }
+        if (importData.settings.themeColor) {
+          localStorage.setItem("themeColor", importData.settings.themeColor);
+          setThemeColor(importData.settings.themeColor);
+        }
 
         // Import chat tabs and chat histories
         setChatTabs(importData.chatTabs);
@@ -233,9 +245,10 @@ export const Settings = ({
           onValueChange={setActiveTab}
           className="w-full pt-5"
         >
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="profile">Profile</TabsTrigger>
             <TabsTrigger value="settings">Models</TabsTrigger>
+            <TabsTrigger value="theme">Theme</TabsTrigger>
           </TabsList>
 
           <TabsContent value="profile" className="mt-4">
@@ -358,6 +371,38 @@ export const Settings = ({
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="theme" className="mt-4">
+            <div className="grid gap-4 py-4">
+              <div className="flex items-center gap-2 mb-4">
+                <Palette className="h-4 w-4" />
+                <Label className="text-sm font-medium">Theme Color</Label>
+              </div>
+              
+              <div className="grid grid-cols-4 gap-3">
+                {THEME_COLORS.map((color) => (
+                  <Button
+                    key={color.value}
+                    variant={localThemeColor === color.value ? "default" : "outline"}
+                    onClick={() => setLocalThemeColor(color.value)}
+                    className={`h-16 w-full ${color.primary} hover:${color.hover} border-2 ${
+                      localThemeColor === color.value ? 'ring-2 ring-white' : ''
+                    }`}
+                    style={{ backgroundColor: color.value === localThemeColor ? undefined : 'transparent' }}
+                  >
+                    <div className="flex flex-col items-center gap-1">
+                      <div className={`w-6 h-6 rounded-full ${color.primary}`}></div>
+                      <span className="text-xs font-medium">{color.name}</span>
+                    </div>
+                  </Button>
+                ))}
+              </div>
+              
+              <div className="text-xs text-zinc-400 text-center mt-4">
+                This color will be used for buttons, accents, and interactive elements throughout the app
               </div>
             </div>
           </TabsContent>
