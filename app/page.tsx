@@ -118,6 +118,8 @@ export default function Home() {
             setIsOpen={setIsOpen}
             activeChatId={activeChatId}
             onFork={forkChat}
+            chatTabs={chatTabs}
+            setChatTabs={setChatTabs}
           />
         </>
       )}

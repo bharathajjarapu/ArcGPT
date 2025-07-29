@@ -17,7 +17,7 @@ import {
   ImageIcon,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
-import type { Message } from "@/types/chat"
+import type { Message, ChatTab } from "@/types/chat"
 import { sendMessage } from "@/app/chat"
 import { TypingIndicator } from "@/components/interface/typing"
 import { CopyButton } from "@/components/interface/copy"
@@ -31,9 +31,11 @@ type ChatProps = {
   setIsOpen: (isOpen: boolean) => void
   activeChatId: string
   onFork: () => void
+  chatTabs: ChatTab[]
+  setChatTabs: (chatTabs: ChatTab[]) => void
 }
 
-export default function Chat({ isOpen, setIsOpen, activeChatId, onFork }: ChatProps) {
+export default function Chat({ isOpen, setIsOpen, activeChatId, onFork, chatTabs, setChatTabs }: ChatProps) {
   const [conversationHistory, setConversationHistory] = useState<Message[]>([])
   const [input, setInput] = useState("")
   const [isLoading, setIsLoading] = useState(false)
@@ -399,6 +401,8 @@ export default function Chat({ isOpen, setIsOpen, activeChatId, onFork }: ChatPr
           const { currentGreeting } = getCurrentTimeAndDate()
           setGreeting(`${currentGreeting} ${name}`)
         }}
+        chatTabs={chatTabs}
+        setChatTabs={setChatTabs}
       />
     </div>
   )
