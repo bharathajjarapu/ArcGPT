@@ -272,80 +272,88 @@ export default function Chat({ isOpen, setIsOpen, activeChatId, onFork }: ChatPr
           </Button>
         </div>
       </header>
-      <ScrollArea className="flex-1 p-4 pt-4 pb-0">
-        <div className="mb-20 pb-1 max-w-4xl mx-auto pt-4">
-          {conversationHistory.length <= 1 && <PromptSuggestions greeting={greeting} onSelect={handlePromptSelect} />}
-          {conversationHistory
-            .filter((message) => message.role !== "system")
-            .map((message) => {
-              const { icon: AgentIcon } = getAgentDetails(message.content)
-              return (
-                <div
-                  key={message.id}
-                  className={cn("mb-4 flex w-full", message.role === "user" ? "justify-end" : "justify-start")}
-                >
+      <div className="flex-1 relative">
+        {/* Top blur gradient */}
+        <div className="absolute top-0 left-0 right-0 h-20 bg-gradient-to-b from-black via-black/90 to-transparent z-10 pointer-events-none backdrop-blur-sm transition-opacity duration-300" />
+        
+        {/* Bottom blur gradient */}
+        <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-black via-black/90 to-transparent z-10 pointer-events-none backdrop-blur-sm transition-opacity duration-300" />
+        
+        <ScrollArea className="h-full p-4 pt-4 pb-0">
+          <div className="mb-20 pb-1 max-w-4xl mx-auto pt-4">
+            {conversationHistory.length <= 1 && <PromptSuggestions greeting={greeting} onSelect={handlePromptSelect} />}
+            {conversationHistory
+              .filter((message) => message.role !== "system")
+              .map((message) => {
+                const { icon: AgentIcon } = getAgentDetails(message.content)
+                return (
                   <div
-                    className={cn(
-                      "flex items-start gap-2 w-fit max-w-[85%]",
-                      message.role === "user" ? "flex-row-reverse" : "flex-row",
-                    )}
+                    key={message.id}
+                    className={cn("mb-4 flex w-full", message.role === "user" ? "justify-end" : "justify-start")}
                   >
                     <div
                       className={cn(
-                        "min-w-[32px] min-h-[32px] w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0",
-                        message.role === "user" ? "bg-blue-600" : "bg-zinc-800",
+                        "flex items-start gap-2 w-fit max-w-[85%]",
+                        message.role === "user" ? "flex-row-reverse" : "flex-row",
                       )}
                     >
-                      {message.role === "user" ? (
-                        AgentIcon ? (
-                          <AgentIcon className="h-5 w-5 text-white flex-shrink-0" />
+                      <div
+                        className={cn(
+                          "min-w-[32px] min-h-[32px] w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0",
+                          message.role === "user" ? "bg-blue-600" : "bg-zinc-800",
+                        )}
+                      >
+                        {message.role === "user" ? (
+                          AgentIcon ? (
+                            <AgentIcon className="h-5 w-5 text-white flex-shrink-0" />
+                          ) : (
+                            <User className="h-5 w-5 text-white flex-shrink-0" />
+                          )
                         ) : (
-                          <User className="h-5 w-5 text-white flex-shrink-0" />
-                        )
-                      ) : (
-                        <Bot className="h-5 w-5 text-white flex-shrink-0" />
-                      )}
-                    </div>
-                    <div
-                      className={cn(
-                        "group relative p-3 rounded-2xl",
-                        message.role === "user" ? "bg-blue-600 text-white" : "bg-zinc-800 text-white",
-                      )}
-                    >
-                      {message.role === "user" ? (
-                        <>
-                          <span className="break-words">{message.content}</span>
-                          {message.agent && (
-                            <span className="text-xs text-gray-400 mt-1 block">{message.agent} agent</span>
-                          )}
-                        </>
-                      ) : (
-                        <>
-                          <MarkdownRenderer>{message.content}</MarkdownRenderer>
-                          {message.content.split(" ").length > 100 && (
-                            <div className="absolute bottom-2 right-2 opacity-0 transition-opacity group-hover:opacity-100">
-                              <CopyButton value={message.content} />
-                            </div>
-                          )}
-                        </>
-                      )}
+                          <Bot className="h-5 w-5 text-white flex-shrink-0" />
+                        )}
+                      </div>
+                      <div
+                        className={cn(
+                          "group relative p-3 rounded-2xl",
+                          message.role === "user" ? "bg-blue-600 text-white" : "bg-zinc-800 text-white",
+                        )}
+                      >
+                        {message.role === "user" ? (
+                          <>
+                            <span className="break-words">{message.content}</span>
+                            {message.agent && (
+                              <span className="text-xs text-gray-400 mt-1 block">{message.agent} agent</span>
+                            )}
+                          </>
+                        ) : (
+                          <>
+                            <MarkdownRenderer>{message.content}</MarkdownRenderer>
+                            {message.content.split(" ").length > 100 && (
+                              <div className="absolute bottom-2 right-2 opacity-0 transition-opacity group-hover:opacity-100">
+                                <CopyButton value={message.content} />
+                              </div>
+                            )}
+                          </>
+                        )}
+                      </div>
                     </div>
                   </div>
+                )
+              })}
+            {isLoading && (
+              <div className="mb-4 flex w-full justify-start">
+                <div className="flex items-start gap-2 w-fit">
+                  <div className="min-w-[32px] min-h-[32px] w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 bg-zinc-800">
+                    <Bot className="h-5 w-5 text-white flex-shrink-0" />
+                  </div>
+                  <TypingIndicator />
                 </div>
-              )
-            })}
-          {isLoading && (
-            <div className="mb-4 flex w-full justify-start">
-              <div className="flex items-start gap-2 w-fit">
-                <div className="min-w-[32px] min-h-[32px] w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 bg-zinc-800">
-                  <Bot className="h-5 w-5 text-white flex-shrink-0" />
-                </div>
-                <TypingIndicator />
               </div>
-            </div>
-          )}
-          <div ref={messagesEndRef} />
-        </div>
+            )}
+            <div ref={messagesEndRef} />
+          </div>
+        </ScrollArea>
         <div className="fixed bottom-0 left-0 right-0 p-4 pt-0 max-w-4xl mx-auto w-full z-10">
           <div className="relative flex items-center">
             <textarea
@@ -383,7 +391,7 @@ export default function Chat({ isOpen, setIsOpen, activeChatId, onFork }: ChatPr
             </div>
           </div>
         </div>
-      </ScrollArea>
+      </div>
       <Settings
         isOpen={isSettingsOpen}
         setIsOpen={setIsSettingsOpen}
