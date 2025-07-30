@@ -17,6 +17,7 @@ import {
   ImageIcon,
   Paperclip,
   X,
+  RotateCcw,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { Message, ChatTab, MessageContent } from "@/types/chat"
@@ -183,27 +184,44 @@ export default function Chat({ isOpen, setIsOpen, activeChatId, onFork, chatTabs
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files
     if (!files || files.length === 0) return
+    
     setImageError(null)
+    
     try {
       const imagePromises = Array.from(files).map(async (file) => {
-        if (file.size > 1024 * 1024) { // 1MB limit
-          setImageError('Image size must be less than 1MB. Please choose a smaller image.')
+        // Check file size first (500KB limit to prevent server body size issues)
+        if (file.size > 512 * 1024) {
+          setImageError('Image size must be less than 500KB. Please choose a smaller image.')
           return null
         }
-        if (file.type.startsWith('image/')) {
+        
+        // Check if it's an image file
+        if (!file.type.startsWith('image/')) {
+          setImageError('Please select only image files.')
+          return null
+        }
+        
+        try {
           const base64 = await fileToBase64(file)
           const imageId = Date.now().toString() + Math.random().toString(36).substr(2, 9)
           return { id: imageId, url: base64, name: file.name }
+        } catch (error) {
+          setImageError('Failed to process image. Please try again.')
+          return null
         }
-        return null
       })
+      
       const images = await Promise.all(imagePromises)
       const validImages = images.filter(img => img !== null) as Array<{id: string, url: string, name: string}>
-      setSelectedImages(prev => [...prev, ...validImages])
+      
+      if (validImages.length > 0) {
+        setSelectedImages(prev => [...prev, ...validImages])
+      }
     } catch (error) {
       setImageError('Failed to upload image. Please try again.')
       console.error("Error uploading images:", error)
     }
+    
     if (fileInputRef.current) {
       fileInputRef.current.value = ""
     }
@@ -373,6 +391,26 @@ export default function Chat({ isOpen, setIsOpen, activeChatId, onFork, chatTabs
     }
   }
 
+  const handleRetry = (failedMsg: FailedMessage) => {
+    if (!failedMsg.retryData) return
+    
+    // Remove the failed message and any error messages that followed it
+    setConversationHistory(prev => {
+      const failedIndex = prev.findIndex(msg => msg.id === failedMsg.id)
+      if (failedIndex !== -1) {
+        // Remove the failed message and any subsequent AI error messages
+        return prev.slice(0, failedIndex)
+      }
+      return prev
+    })
+    
+    // Clear the failed message state
+    setFailedMessage(null)
+    
+    // Retry sending the message
+    handleSendMessage(failedMsg.retryData.text, failedMsg.retryData.images)
+  }
+
   // Don't render until initialized to prevent hydration mismatch
   if (!isInitialized) {
     return <div className="flex-1 flex flex-col bg-black text-white" />
@@ -483,19 +521,16 @@ export default function Chat({ isOpen, setIsOpen, activeChatId, onFork, chatTabs
                             </div>
                           )}
                           {isFailed && (
-                            <div className="mt-3 flex items-center gap-2">
-                              <span className="text-xs text-red-200">Failed to send. </span>
+                            <div className="mt-2 flex items-center justify-end">
                               <Button
                                 size="sm"
-                                className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded"
-                                onClick={() => {
-                                  if (failedMessage?.retryData) {
-                                    handleSendMessage(failedMessage.retryData.text, failedMessage.retryData.images)
-                                  }
-                                }}
+                                className="bg-blue-600 hover:bg-blue-700 text-white p-1.5 rounded-md flex items-center gap-1.5"
+                                onClick={() => handleRetry(failedMessage!)}
                                 disabled={isLoading}
+                                title="Retry sending message"
                               >
-                                Retry
+                                <RotateCcw className="w-3 h-3" />
+                                <span className="text-xs">Retry</span>
                               </Button>
                             </div>
                           )}
