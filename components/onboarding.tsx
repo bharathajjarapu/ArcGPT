@@ -37,9 +37,9 @@ export function Onboarding({ onComplete }: { onComplete: () => void }) {
   const [selectedTheme, setSelectedTheme] = useState('default')
   const [systemPrompt, setSystemPrompt] = useState(systemPromptOptions[0].value)
   const [customSystemPrompt, setCustomSystemPrompt] = useState('')
-  const [textModel, setTextModel] = useState('')
+  const [textModel, setTextModel] = useState('openai-fast')
   const [imageModel, setImageModel] = useState('')
-  const [textModels, setTextModels] = useState<string[]>(DEFAULT_TEXT_MODELS)
+  const [textModels, setTextModels] = useState<string[]>(["openai-fast", "openai", "phi"])
   const [isLoadingModels, setIsLoadingModels] = useState(false)
   const { setTheme } = useTheme()
 
@@ -58,7 +58,7 @@ export function Onboarding({ onComplete }: { onComplete: () => void }) {
         if (response.ok) {
           const data = await response.json();
           if (data && Array.isArray(data)) {
-            setTextModels(data.map((model: any) => model.name || model));
+            setTextModels(data.map((model: any) => model.name || model).filter((m: string) => ["openai", "openai-fast", "phi"].includes(m)));
           }
         }
       } catch (error) {
@@ -77,7 +77,7 @@ export function Onboarding({ onComplete }: { onComplete: () => void }) {
     localStorage.setItem('profileName', name)
     localStorage.setItem('theme', selectedTheme)
     localStorage.setItem('systemPrompt', finalSystemPrompt)
-    localStorage.setItem('textModel', textModel)
+    localStorage.setItem('textModel', textModel || 'openai-fast')
     localStorage.setItem('imageModel', imageModel)
     localStorage.setItem('onboardingComplete', 'true')
     setTheme(selectedTheme)

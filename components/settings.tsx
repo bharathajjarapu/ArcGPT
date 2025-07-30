@@ -35,14 +35,7 @@ export const IMAGE_MODELS = [
 export const DEFAULT_TEXT_MODELS = [
   "openai-fast",
   "openai",
-  "mistral",
-  "mistral-large",
-  "llama",
-  "command-r",
-  "searchgpt",
-  "evil",
-  "qwen-coder",
-  "p1",
+  "phi",
 ];
 
 interface SettingsProps {
@@ -77,7 +70,7 @@ export const Settings = ({
   const [activeTab, setActiveTab] = useState("profile");
   const [localProfileName, setLocalProfileName] = useState(profileName);
   const [localSystemPrompt, setLocalSystemPrompt] = useState(systemPrompt);
-  const [localTextModel, setLocalTextModel] = useState(selectedTextModel);
+  const [localTextModel, setLocalTextModel] = useState(selectedTextModel || "openai-fast");
   const [localImageModel, setLocalImageModel] = useState(selectedImageModel);
   const [textModels, setTextModels] = useState<string[]>(DEFAULT_TEXT_MODELS);
   const [isLoadingModels, setIsLoadingModels] = useState(false);
@@ -87,7 +80,7 @@ export const Settings = ({
   useEffect(() => {
     setLocalProfileName(profileName);
     setLocalSystemPrompt(systemPrompt);
-    setLocalTextModel(selectedTextModel);
+    setLocalTextModel(selectedTextModel || "openai-fast");
     setLocalImageModel(selectedImageModel);
   }, [isOpen, profileName, systemPrompt, selectedTextModel, selectedImageModel]);
 
@@ -99,7 +92,8 @@ export const Settings = ({
         if (response.ok) {
           const data = await response.json();
           if (data && Array.isArray(data)) {
-            setTextModels(data.map((model: any) => model.name || model));
+            // Only allow openai, openai-fast, phi
+            setTextModels(data.map((model: any) => model.name || model).filter((m: string) => ["openai", "openai-fast", "phi"].includes(m)));
           }
         }
       } catch (error) {
@@ -120,7 +114,7 @@ export const Settings = ({
     setSelectedImageModel(localImageModel);
     localStorage.setItem("profileName", localProfileName);
     localStorage.setItem("systemPrompt", localSystemPrompt);
-    localStorage.setItem("textModel", localTextModel);
+    localStorage.setItem("textModel", localTextModel || "openai-fast");
     localStorage.setItem("imageModel", localImageModel);
     toast.success("Settings saved successfully.");
     setIsOpen(false);
