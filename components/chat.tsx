@@ -61,6 +61,7 @@ export default function Chat({ isOpen, setIsOpen, activeChatId, onFork, chatTabs
   const [selectedImages, setSelectedImages] = useState<Array<{id: string, url: string, name: string}>>([])
   const [isInitialized, setIsInitialized] = useState(false)
   const [failedMessage, setFailedMessage] = useState<FailedMessage | null>(null)
+  const [imageError, setImageError] = useState<string | null>(null)
 
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
@@ -182,9 +183,13 @@ export default function Chat({ isOpen, setIsOpen, activeChatId, onFork, chatTabs
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files
     if (!files || files.length === 0) return
-
+    setImageError(null)
     try {
       const imagePromises = Array.from(files).map(async (file) => {
+        if (file.size > 1024 * 1024) { // 1MB limit
+          setImageError('Image size must be less than 1MB. Please choose a smaller image.')
+          return null
+        }
         if (file.type.startsWith('image/')) {
           const base64 = await fileToBase64(file)
           const imageId = Date.now().toString() + Math.random().toString(36).substr(2, 9)
@@ -192,16 +197,13 @@ export default function Chat({ isOpen, setIsOpen, activeChatId, onFork, chatTabs
         }
         return null
       })
-
       const images = await Promise.all(imagePromises)
       const validImages = images.filter(img => img !== null) as Array<{id: string, url: string, name: string}>
-      
       setSelectedImages(prev => [...prev, ...validImages])
     } catch (error) {
+      setImageError('Failed to upload image. Please try again.')
       console.error("Error uploading images:", error)
     }
-
-    // Reset file input
     if (fileInputRef.current) {
       fileInputRef.current.value = ""
     }
@@ -405,7 +407,8 @@ export default function Chat({ isOpen, setIsOpen, activeChatId, onFork, chatTabs
           </Button>
         </div>
       </header>
-      <ScrollArea className="flex-1 p-4 pt-4 pb-0">
+      <ScrollArea className="flex-1 p-4 pt-0 pb-0">
+        <div className="absolute top-0 left-0 right-0 h-8 bg-gradient-to-b from-black/80 to-transparent pointer-events-none z-10" />
         <div className="mb-32 pb-1 max-w-4xl mx-auto pt-4">
           {conversationHistory.length <= 1 && <PromptSuggestions greeting={greeting} onSelect={handlePromptSelect} />}
           {conversationHistory
@@ -527,7 +530,7 @@ export default function Chat({ isOpen, setIsOpen, activeChatId, onFork, chatTabs
         <div className="fixed bottom-0 left-0 right-0 p-4 pt-0 max-w-4xl mx-auto w-full z-10">
           {/* Image Preview */}
           {selectedImages.length > 0 && (
-            <div className="mb-3 p-4 bg-gray-900/90 backdrop-blur-lg rounded-xl border border-gray-700/50 shadow-lg">
+            <div className="mb-3 p-4 bg-background p-4 hover:bg-muted border-gray-700/50 rounded-xl border border-gray-700/50 shadow-lg">
               <div className="flex flex-wrap gap-3">
                 {selectedImages.map((image) => (
                   <div key={image.id} className="relative group">
@@ -551,6 +554,12 @@ export default function Chat({ isOpen, setIsOpen, activeChatId, onFork, chatTabs
             </div>
           )}
           
+          {/* Image Error Message */}
+          {imageError && (
+            <div className="mb-2 p-2 bg-red-700/50 text-white rounded-lg border border-red-400/50 text-sm font-medium">
+              {imageError}
+            </div>
+          )}
           <div className="relative flex items-end">
             <textarea
               ref={textareaRef}
