@@ -3,9 +3,21 @@ export type ChatTab = {
   name: string
 }
 
+export type MessageContent = 
+  | string
+  | Array<{
+      type: 'text'
+      text: string
+    } | {
+      type: 'image_url'
+      image_url: {
+        url: string
+      }
+    }>
+
 export type Message = {
   id: string
-  content: string
+  content: MessageContent
   role: 'user' | 'ai' | 'system'
   agent?: string | null
 }

@@ -1,5 +1,7 @@
 'use server'
 
+import type { Message, MessageContent } from '@/types/chat'
+
 export async function fetchTextModels() {
   try {
     const response = await fetch('https://text.pollinations.ai/models', {
@@ -21,20 +23,32 @@ export async function fetchTextModels() {
   }
 }
 
-export async function sendMessage(conversationHistory: string[], textModel: string = "pi") {
+export async function sendMessage(messages: Message[], textModel: string = "openai") {
   try {
-    const response = await fetch('https://text.pollinations.ai/', {
+    // Convert messages to OpenAI format
+    const openAIMessages = messages.map((message) => {
+      if (message.role === 'system') {
+        return {
+          role: 'system' as const,
+          content: typeof message.content === 'string' ? message.content : message.content[0]?.type === 'text' ? message.content[0].text : ''
+        }
+      }
+      
+      return {
+        role: message.role === 'user' ? 'user' as const : 'assistant' as const,
+        content: message.content
+      }
+    });
+
+    const response = await fetch('https://text.pollinations.ai/openai', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        messages: conversationHistory.map((message, index) => ({
-          role: index === 0 ? 'system': message.role === 'user' ? 'user' : 'system', 
-          content: message,
-        })),
         model: textModel,
-        jsonMode: false,
+        messages: openAIMessages,
+        max_tokens: 300,
       }),
     });
 
@@ -42,8 +56,8 @@ export async function sendMessage(conversationHistory: string[], textModel: stri
       throw new Error(`HTTP error! status: ${response.status}`);
     }
 
-    const data = await response.text();
-    return data;
+    const data = await response.json();
+    return data.choices[0]?.message?.content || null;
   } catch (error) {
     console.error('Error:', error);
     return null;

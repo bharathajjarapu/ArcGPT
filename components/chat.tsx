@@ -15,9 +15,11 @@ import {
   Search,
   Code,
   ImageIcon,
+  Paperclip,
+  X,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
-import type { Message, ChatTab } from "@/types/chat"
+import type { Message, ChatTab, MessageContent } from "@/types/chat"
 import { sendMessage } from "@/app/chat"
 import { TypingIndicator } from "@/components/interface/typing"
 import { CopyButton } from "@/components/interface/copy"
@@ -35,6 +37,18 @@ type ChatProps = {
   setChatTabs: (chatTabs: ChatTab[]) => void
 }
 
+// Add a type for failed messages
+interface FailedMessage {
+  id: string;
+  content: MessageContent;
+  role: 'user';
+  agent?: string | null;
+  retryData?: {
+    text: string;
+    images: Array<{id: string, url: string, name: string}>;
+  };
+}
+
 export default function Chat({ isOpen, setIsOpen, activeChatId, onFork, chatTabs, setChatTabs }: ChatProps) {
   const [conversationHistory, setConversationHistory] = useState<Message[]>([])
   const [input, setInput] = useState("")
@@ -42,36 +56,77 @@ export default function Chat({ isOpen, setIsOpen, activeChatId, onFork, chatTabs
   const [greeting, setGreeting] = useState("")
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [systemPrompt, setSystemPrompt] = useState("")
-  const [selectedTextModel, setSelectedTextModel] = useState(() => localStorage.getItem("textModel") || "openai-fast")
-  const [selectedImageModel, setSelectedImageModel] = useState(() => localStorage.getItem("imageModel") || "flux")
+  const [selectedTextModel, setSelectedTextModel] = useState("openai")
+  const [selectedImageModel, setSelectedImageModel] = useState("flux")
+  const [selectedImages, setSelectedImages] = useState<Array<{id: string, url: string, name: string}>>([])
+  const [isInitialized, setIsInitialized] = useState(false)
+  const [failedMessage, setFailedMessage] = useState<FailedMessage | null>(null)
 
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  // Initialize from localStorage after component mounts to prevent hydration issues
+  useEffect(() => {
+    const initializeFromStorage = () => {
+      const savedTextModel = localStorage.getItem("textModel")
+      const savedImageModel = localStorage.getItem("imageModel")
+      
+      if (savedTextModel) setSelectedTextModel(savedTextModel)
+      if (savedImageModel) setSelectedImageModel(savedImageModel)
+      
+      setIsInitialized(true)
+    }
+    
+    initializeFromStorage()
+  }, [])
+
+  // Helper function to convert file to base64
+  const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.readAsDataURL(file)
+      reader.onload = () => resolve(reader.result as string)
+      reader.onerror = error => reject(error)
+    })
+  }
+
+  // Helper function to get content as string for display
+  const getContentAsString = (content: MessageContent): string => {
+    if (typeof content === 'string') {
+      return content
+    }
+    // For array content, get only text parts
+    const textParts = content.filter(item => item.type === 'text').map(item => item.text)
+    return textParts.join(' ')
+  }
+
+  // Helper function to get images from content
+  const getImagesFromContent = (content: MessageContent): Array<{type: 'image_url', image_url: {url: string}}> => {
+    if (Array.isArray(content)) {
+      return content.filter(item => item.type === 'image_url') as Array<{type: 'image_url', image_url: {url: string}}>
+    }
+    return []
+  }
 
   useEffect(() => {
     if (textareaRef.current) {
       textareaRef.current.style.height = "auto"
       textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`
     }
-  }, [textareaRef])
+  }, [input])
 
   useEffect(() => {
+    if (!isInitialized) return
+
     const { formattedTime, formattedDate, currentGreeting } = getCurrentTimeAndDate()
     const savedProfileName = localStorage.getItem("profileName") || "User"
     setGreeting(`${currentGreeting} ${savedProfileName}`)
 
     const savedSystemPrompt = localStorage.getItem("systemPrompt")
-    const savedTextModel = localStorage.getItem("textModel")
-    const savedImageModel = localStorage.getItem("imageModel")
 
     if (savedSystemPrompt) {
       setSystemPrompt(savedSystemPrompt)
-    }
-    if (savedTextModel) {
-      setSelectedTextModel(savedTextModel)
-    }
-    if (savedImageModel) {
-      setSelectedImageModel(savedImageModel)
     }
 
     const baseSystemPrompt = `You are an AI assistant named Arc. You help user with your queries. Respond to User only in Markdown.
@@ -90,21 +145,28 @@ export default function Chat({ isOpen, setIsOpen, activeChatId, onFork, chatTabs
 
     const savedMessages = localStorage.getItem(`chat_${activeChatId}`)
     if (savedMessages) {
-      const parsedMessages = JSON.parse(savedMessages)
-      const updatedMessages = parsedMessages.map((msg: Message) => (msg.id === "init" ? systemMessage : msg))
-      setConversationHistory(updatedMessages)
+      try {
+        const parsedMessages = JSON.parse(savedMessages)
+        const updatedMessages = parsedMessages.map((msg: Message) => (msg.id === "init" ? systemMessage : msg))
+        setConversationHistory(updatedMessages)
+      } catch (error) {
+        console.error("Error parsing saved messages:", error)
+        setConversationHistory([systemMessage])
+      }
     } else {
       setConversationHistory([systemMessage])
     }
-  }, [activeChatId, selectedImageModel])
+  }, [activeChatId, selectedImageModel, isInitialized])
 
   useEffect(() => {
-    localStorage.setItem(`chat_${activeChatId}`, JSON.stringify(conversationHistory))
-  }, [activeChatId, conversationHistory])
+    if (conversationHistory.length > 0 && isInitialized) {
+      localStorage.setItem(`chat_${activeChatId}`, JSON.stringify(conversationHistory))
+    }
+  }, [activeChatId, conversationHistory, isInitialized])
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
-  }, [conversationHistory, messagesEndRef])
+  }, [conversationHistory])
 
   const getAgentDetails = (content: string) => {
     if (content.startsWith("@search ")) {
@@ -117,66 +179,125 @@ export default function Chat({ isOpen, setIsOpen, activeChatId, onFork, chatTabs
     return { prefix: null, model: selectedTextModel, icon: null }
   }
 
-  const handleSendMessage = async (content: string) => {
-    if (content.trim()) {
-      const { prefix, model, icon } = getAgentDetails(content)
-      const messageContent = prefix ? content.slice(prefix.length).trim() : content
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files
+    if (!files || files.length === 0) return
 
-      const userMessage: Message = {
-        id: Date.now().toString(),
-        content: messageContent,
-        role: "user",
-        agent: prefix ? prefix.slice(1) : null,
+    try {
+      const imagePromises = Array.from(files).map(async (file) => {
+        if (file.type.startsWith('image/')) {
+          const base64 = await fileToBase64(file)
+          const imageId = Date.now().toString() + Math.random().toString(36).substr(2, 9)
+          return { id: imageId, url: base64, name: file.name }
+        }
+        return null
+      })
+
+      const images = await Promise.all(imagePromises)
+      const validImages = images.filter(img => img !== null) as Array<{id: string, url: string, name: string}>
+      
+      setSelectedImages(prev => [...prev, ...validImages])
+    } catch (error) {
+      console.error("Error uploading images:", error)
+    }
+
+    // Reset file input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ""
+    }
+  }
+
+  const removeImage = (imageId: string) => {
+    setSelectedImages(prev => prev.filter(img => img.id !== imageId))
+  }
+
+  const handleSendMessage = async (content: string, retryImages?: Array<{id: string, url: string, name: string}>) => {
+    if (isLoading || (!content.trim() && (selectedImages.length === 0 && (!retryImages || retryImages.length === 0)))) {
+      return
+    }
+    const imagesToSend = retryImages || selectedImages
+    const { prefix, model } = getAgentDetails(content)
+    const messageContent = prefix ? content.slice(prefix.length).trim() : content
+    let userMessageContent: MessageContent
+    if (prefix === "@imagine") {
+      userMessageContent = messageContent
+    } else if (imagesToSend.length > 0) {
+      const contentArray: Array<{type: 'text', text: string} | {type: 'image_url', image_url: {url: string}}> = []
+      if (messageContent.trim()) {
+        contentArray.push({ type: 'text', text: messageContent })
       }
-
-      const updatedConversationHistory = [...conversationHistory, userMessage]
-      setConversationHistory(updatedConversationHistory)
-      setInput("")
-      setIsLoading(true)
-
-      try {
-        const messagesToSend = [
-          conversationHistory[0].content,
-          ...updatedConversationHistory.slice(1).map((msg) => msg.content),
-        ]
-
-        let response
-        if (prefix === "@imagine") {
-          response = `![Generated Image](https://pollinations.ai/p/${encodeURIComponent(messageContent)}?width=512&height=512&nologo=true&model=${model})`
-        } else {
-          response = await sendMessage(messagesToSend, model)
+      imagesToSend.forEach(img => {
+        contentArray.push({
+          type: 'image_url',
+          image_url: { url: img.url }
+        })
+      })
+      userMessageContent = contentArray
+    } else {
+      userMessageContent = messageContent
+    }
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      content: userMessageContent,
+      role: "user",
+      agent: prefix ? prefix.slice(1) : null,
+    }
+    setInput("")
+    setSelectedImages([])
+    setIsLoading(true)
+    setFailedMessage(null)
+    const updatedConversationHistory = [...conversationHistory, userMessage]
+    setConversationHistory(updatedConversationHistory)
+    try {
+      let response
+      if (prefix === "@imagine") {
+        response = `![Generated Image](https://pollinations.ai/p/${encodeURIComponent(messageContent)}?width=512&height=512&nologo=true&model=${model})`
+      } else {
+        response = await sendMessage(updatedConversationHistory, model)
+      }
+      if (response) {
+        const aiMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          content: response,
+          role: "ai",
+          agent: null,
         }
-
-        if (response) {
-          const aiMessage: Message = {
-            id: (Date.now() + 1).toString(),
-            content: response,
-            role: "ai",
-            agent: null,
-          }
-          const finalConversationHistory = [...updatedConversationHistory, aiMessage]
-          setConversationHistory(finalConversationHistory)
-          localStorage.setItem(`chat_${activeChatId}`, JSON.stringify(finalConversationHistory))
-        } else {
-          console.error("Error fetching response from AI model.")
-          const errorMessage: Message = {
-            id: (Date.now() + 2).toString(),
-            content: "Sorry, I encountered an error. Please try again.",
-            role: "ai",
-          }
-          setConversationHistory([...updatedConversationHistory, errorMessage])
-        }
-      } catch (error) {
-        console.error("Error during API call:", error)
+        setConversationHistory(prev => [...prev, aiMessage])
+      } else {
         const errorMessage: Message = {
-          id: (Date.now() + 3).toString(),
-          content: "Sorry, there was a problem connecting to the server.",
+          id: (Date.now() + 2).toString(),
+          content: "Sorry, I encountered an error. Please try again.",
           role: "ai",
         }
-        setConversationHistory([...updatedConversationHistory, errorMessage])
-      } finally {
-        setIsLoading(false)
+        setConversationHistory(prev => [...prev, errorMessage])
+        setFailedMessage({
+          id: userMessage.id,
+          content: userMessageContent,
+          role: 'user',
+          agent: userMessage.agent,
+          retryData: { text: content, images: imagesToSend }
+        })
       }
+    } catch (error: any) {
+      let isTimeout = false
+      if (error && error.message && error.message.includes('524')) {
+        isTimeout = true
+      }
+      const errorMessage: Message = {
+        id: (Date.now() + 3).toString(),
+        content: isTimeout ? "The AI service timed out (524). Please try again or click Retry." : "Sorry, there was a problem connecting to the server.",
+        role: "ai",
+      }
+      setConversationHistory(prev => [...prev, errorMessage])
+      setFailedMessage({
+        id: userMessage.id,
+        content: userMessageContent,
+        role: 'user',
+        agent: userMessage.agent,
+        retryData: { text: content, images: imagesToSend }
+      })
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -188,8 +309,13 @@ export default function Chat({ isOpen, setIsOpen, activeChatId, onFork, chatTabs
   }
 
   const clearChat = () => {
-    setConversationHistory([conversationHistory[0]])
-    localStorage.setItem(`chat_${activeChatId}`, JSON.stringify([conversationHistory[0]]))
+    if (conversationHistory.length > 0) {
+      const systemMessage = conversationHistory[0]
+      setConversationHistory([systemMessage])
+      setSelectedImages([])
+      setInput("")
+      localStorage.setItem(`chat_${activeChatId}`, JSON.stringify([systemMessage]))
+    }
   }
 
   useEffect(() => {
@@ -198,7 +324,7 @@ export default function Chat({ isOpen, setIsOpen, activeChatId, onFork, chatTabs
         setSelectedImageModel(e.newValue || "flux")
       }
       if (e.key === "textModel") {
-        setSelectedTextModel(e.newValue || "openai-fast")
+        setSelectedTextModel(e.newValue || "openai")
       }
       if (e.key === "profileName") {
         const { currentGreeting } = getCurrentTimeAndDate()
@@ -245,6 +371,11 @@ export default function Chat({ isOpen, setIsOpen, activeChatId, onFork, chatTabs
     }
   }
 
+  // Don't render until initialized to prevent hydration mismatch
+  if (!isInitialized) {
+    return <div className="flex-1 flex flex-col bg-black text-white" />
+  }
+
   return (
     <div className="flex-1 flex flex-col bg-black text-white">
       <header className="flex items-center pt-3 pb-0.8 px-3 border-b border-border/20">
@@ -275,26 +406,30 @@ export default function Chat({ isOpen, setIsOpen, activeChatId, onFork, chatTabs
         </div>
       </header>
       <ScrollArea className="flex-1 p-4 pt-4 pb-0">
-        <div className="mb-20 pb-1 max-w-4xl mx-auto pt-4">
+        <div className="mb-32 pb-1 max-w-4xl mx-auto pt-4">
           {conversationHistory.length <= 1 && <PromptSuggestions greeting={greeting} onSelect={handlePromptSelect} />}
           {conversationHistory
             .filter((message) => message.role !== "system")
-            .map((message) => {
-              const { icon: AgentIcon } = getAgentDetails(message.content)
+            .map((message, idx) => {
+              const contentString = getContentAsString(message.content)
+              const { icon: AgentIcon } = getAgentDetails(contentString)
+              const messageImages = getImagesFromContent(message.content)
+              // Check if this is the failed message
+              const isFailed = failedMessage && failedMessage.id === message.id
               return (
                 <div
                   key={message.id}
-                  className={cn("mb-4 flex w-full", message.role === "user" ? "justify-end" : "justify-start")}
+                  className={cn("mb-6 flex w-full", message.role === "user" ? "justify-end" : "justify-start")}
                 >
                   <div
                     className={cn(
-                      "flex items-start gap-2 w-fit max-w-[85%]",
+                      "flex items-start gap-3 w-fit max-w-[85%]",
                       message.role === "user" ? "flex-row-reverse" : "flex-row",
                     )}
                   >
                     <div
                       className={cn(
-                        "min-w-[32px] min-h-[32px] w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0",
+                        "min-w-[32px] min-h-[32px] w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 mt-1",
                         message.role === "user" ? "bg-blue-600" : "bg-zinc-800",
                       )}
                     >
@@ -310,26 +445,67 @@ export default function Chat({ isOpen, setIsOpen, activeChatId, onFork, chatTabs
                     </div>
                     <div
                       className={cn(
-                        "group relative p-3 rounded-2xl",
+                        "group relative rounded-2xl overflow-hidden",
                         message.role === "user" ? "bg-blue-600 text-white" : "bg-zinc-800 text-white",
                       )}
                     >
                       {message.role === "user" ? (
-                        <>
-                          <span className="break-words">{message.content}</span>
-                          {message.agent && (
-                            <span className="text-xs text-gray-400 mt-1 block">{message.agent} agent</span>
-                          )}
-                        </>
-                      ) : (
-                        <>
-                          <MarkdownRenderer>{message.content}</MarkdownRenderer>
-                          {message.content.split(" ").length > 100 && (
-                            <div className="absolute bottom-2 right-2 opacity-0 transition-opacity group-hover:opacity-100">
-                              <CopyButton value={message.content} />
+                        <div className="p-4">
+                          {messageImages.length > 0 && (
+                            <div className={cn(
+                              "mb-3 grid gap-2 rounded-lg overflow-hidden",
+                              messageImages.length === 1 ? "grid-cols-1 max-w-xs" :
+                              messageImages.length === 2 ? "grid-cols-2 max-w-md" :
+                              "grid-cols-2 max-w-lg"
+                            )}>
+                              {messageImages.map((img, idx) => (
+                                <div key={idx} className="relative">
+                                  <img
+                                    src={img.image_url.url}
+                                    alt={`Uploaded image ${idx + 1}`}
+                                    className="w-full h-auto rounded-md max-h-60 object-cover border border-white/20"
+                                  />
+                                </div>
+                              ))}
                             </div>
                           )}
-                        </>
+                          {contentString && (
+                            <div className="break-words whitespace-pre-wrap text-sm leading-relaxed">
+                              {contentString}
+                            </div>
+                          )}
+                          {message.agent && (
+                            <div className="text-xs text-blue-200 mt-2 opacity-80">
+                              {message.agent} agent
+                            </div>
+                          )}
+                          {isFailed && (
+                            <div className="mt-3 flex items-center gap-2">
+                              <span className="text-xs text-red-200">Failed to send. </span>
+                              <Button
+                                size="sm"
+                                className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded"
+                                onClick={() => {
+                                  if (failedMessage?.retryData) {
+                                    handleSendMessage(failedMessage.retryData.text, failedMessage.retryData.images)
+                                  }
+                                }}
+                                disabled={isLoading}
+                              >
+                                Retry
+                              </Button>
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="p-4">
+                          <MarkdownRenderer>{contentString}</MarkdownRenderer>
+                          {contentString.split(" ").length > 100 && (
+                            <div className="absolute bottom-2 right-2 opacity-0 transition-opacity group-hover:opacity-100">
+                              <CopyButton value={contentString} />
+                            </div>
+                          )}
+                        </div>
                       )}
                     </div>
                   </div>
@@ -338,8 +514,8 @@ export default function Chat({ isOpen, setIsOpen, activeChatId, onFork, chatTabs
             })}
           {isLoading && (
             <div className="mb-4 flex w-full justify-start">
-              <div className="flex items-start gap-2 w-fit">
-                <div className="min-w-[32px] min-h-[32px] w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 bg-zinc-800">
+              <div className="flex items-start gap-3 w-fit">
+                <div className="min-w-[32px] min-h-[32px] w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 bg-zinc-800 mt-1">
                   <Bot className="h-5 w-5 text-white flex-shrink-0" />
                 </div>
                 <TypingIndicator />
@@ -349,7 +525,33 @@ export default function Chat({ isOpen, setIsOpen, activeChatId, onFork, chatTabs
           <div ref={messagesEndRef} />
         </div>
         <div className="fixed bottom-0 left-0 right-0 p-4 pt-0 max-w-4xl mx-auto w-full z-10">
-          <div className="relative flex items-center">
+          {/* Image Preview */}
+          {selectedImages.length > 0 && (
+            <div className="mb-3 p-4 bg-gray-900/90 backdrop-blur-lg rounded-xl border border-gray-700/50 shadow-lg">
+              <div className="flex flex-wrap gap-3">
+                {selectedImages.map((image) => (
+                  <div key={image.id} className="relative group">
+                    <img
+                      src={image.url}
+                      alt={image.name}
+                      className="w-24 h-24 object-cover rounded-lg border border-gray-600 shadow-md"
+                    />
+                    <button
+                      onClick={() => removeImage(image.id)}
+                      className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600 transition-colors opacity-0 group-hover:opacity-100 shadow-lg"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent text-white text-xs p-2 rounded-b-lg">
+                      <div className="truncate font-medium">{image.name}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          
+          <div className="relative flex items-end">
             <textarea
               ref={textareaRef}
               value={input}
@@ -361,23 +563,44 @@ export default function Chat({ isOpen, setIsOpen, activeChatId, onFork, chatTabs
                 }
               }}
               placeholder="Message Arc"
-              className="w-full bg-gray-900/30 backdrop-blur-lg rounded-2xl pl-4 pr-24 py-4 focus:outline-none focus:ring-1 focus:ring-blue-500/50 resize-none min-h-[56px] border border-gray-800/40 shadow-lg"
+              className="w-full bg-background p-4 border-gray-700/50 rounded-2xl pl-4 pr-36 py-4 focus:outline-none focus:ring-2 focus:ring-blue-500/50 resize-none min-h-[56px] max-h-32 border border-gray-700/50 shadow-lg text-white placeholder-gray-400"
               style={{ scrollbarWidth: "none" }}
               rows={1}
+              disabled={isLoading}
             />
-            <div className="absolute right-2 top-2 flex items-start">
+            <div className="absolute right-2 bottom-2 flex items-center gap-1">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={handleImageUpload}
+                className="hidden"
+                disabled={isLoading}
+              />
+              <Button
+                onClick={() => fileInputRef.current?.click()}
+                className="h-10 w-10 flex items-center justify-center rounded-lg bg-zinc-700 p-2 hover:bg-zinc-600 transition-colors disabled:opacity-50"
+                title="Attach images"
+                disabled={isLoading}
+              >
+                <Paperclip className="h-5 w-5 text-white" />
+                <span className="sr-only">Attach image</span>
+              </Button>
               <Button
                 onClick={startListening}
-                className="h-10 w-10 flex items-center justify-center rounded-lg bg-zinc-700 p-2 hover:bg-zinc-600 transition-colors mr-2"
-                disabled={isListening}
+                className="h-10 w-10 flex items-center justify-center rounded-lg bg-zinc-700 p-2 hover:bg-zinc-600 transition-colors disabled:opacity-50"
+                disabled={isListening || isLoading}
+                title="Voice input"
               >
                 <Mic className={`h-5 w-5 ${isListening ? "text-red-500" : "text-white"}`} />
                 <span className="sr-only">Start voice input</span>
               </Button>
               <Button
                 onClick={() => handleSendMessage(input)}
-                className="h-10 w-10 flex items-center justify-center rounded-lg bg-blue-600 p-2 hover:bg-blue-700 transition-colors"
-                disabled={!input.trim() || isLoading}
+                className="h-10 w-10 flex items-center justify-center rounded-lg bg-blue-600 p-2 hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={(!input.trim() && selectedImages.length === 0) || isLoading}
+                title="Send message"
               >
                 <ArrowUp className="h-5 w-5" />
                 <span className="sr-only">Send message</span>
