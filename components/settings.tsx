@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/select";
 import { Download, Upload, AlertCircle } from "lucide-react";
 import { ChatTab } from '@/types/chat';
+import { Textarea } from "@/components/ui/textarea";
 
 export const IMAGE_MODELS = [
   "flux",
@@ -240,22 +241,22 @@ export const Settings = ({
 
           <TabsContent value="profile" className="mt-4">
             <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="name" className="text-right">
+              <div className="grid grid-cols-[auto,1fr] items-center gap-4">
+                <Label htmlFor="name">
                   Full Name
                 </Label>
                 <Input
                   id="name"
                   value={localProfileName}
                   onChange={(e) => setLocalProfileName(e.target.value)}
-                  className="col-span-3"
+                  className="w-full"
                 />
               </div>
               
               {/* Export/Import Section */}
-              <div className="grid gap-4 pt-4 border-t border-zinc-800">
+              <div className="grid gap-4 pt-4">
                 <div className="flex items-center gap-2">
-                  <Label className="text-sm font-medium">Chat Management</Label>
+                  <Label className="text-sm font-medium">Backup & Restore</Label>
                 </div>
                 
                 <div className="grid grid-cols-2 gap-2">
@@ -295,30 +296,28 @@ export const Settings = ({
                     <span className="text-sm text-red-400">{importError}</span>
                   </div>
                 )}
-                
-                <div className="text-xs text-zinc-400">
-                  Export includes all chats, settings, and conversation history. Import will replace current data.
-                </div>
               </div>
             </div>
           </TabsContent>
 
           <TabsContent value="settings" className="mt-4">
             <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="system-prompt" className="text-right">
-                  System
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="system-prompt">
+                  System Prompt
                 </Label>
-                <Input
+                <Textarea
                   id="system-prompt"
                   value={localSystemPrompt}
                   onChange={(e) => setLocalSystemPrompt(e.target.value)}
-                  className="col-span-3"
+                  className="w-full"
+                  rows={3}
                 />
               </div>
 
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="text-model" className="text-right">
+              {/* Text Model field */}
+              <div className="grid grid-cols-[auto,1fr] items-center gap-4">
+                <Label htmlFor="text-model">
                   Text Model
                 </Label>
                 <Select
@@ -326,7 +325,7 @@ export const Settings = ({
                   onValueChange={setLocalTextModel}
                   disabled={isLoadingModels}
                 >
-                  <SelectTrigger className="col-span-3">
+                  <SelectTrigger className="w-full">
                     <SelectValue placeholder={isLoadingModels ? "Loading models..." : "Select text model"} />
                   </SelectTrigger>
                   <SelectContent>
@@ -339,15 +338,16 @@ export const Settings = ({
                 </Select>
               </div>
 
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="image-model" className="text-right">
+              {/* Image Model field */}
+              <div className="grid grid-cols-[auto,1fr] items-center gap-4">
+                <Label htmlFor="image-model">
                   Image Model
                 </Label>
                 <Select
                   value={localImageModel}
                   onValueChange={setLocalImageModel}
                 >
-                  <SelectTrigger id="image-model" className="col-span-3">
+                  <SelectTrigger id="image-model" className="w-full">
                     <SelectValue placeholder="Select image model" />
                   </SelectTrigger>
                   <SelectContent>
