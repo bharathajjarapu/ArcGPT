@@ -1,6 +1,8 @@
 import './globals.css'
 import '../styles/katex.css'
 import { Inter } from 'next/font/google'
+import { ThemeProvider } from '@/lib/theme-context'
+import { AppToaster } from '@/components/toaster'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -19,9 +21,12 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" className="dark">
-      <body className={`${inter.className} bg-black text-white`}>
-        {children}
+    <html lang="en">
+      <body className={`${inter.className} bg-background text-foreground`}>
+        <ThemeProvider>
+          {children}
+          <AppToaster />
+        </ThemeProvider>
       </body>
     </html>
   )

@@ -18,9 +18,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Download, Upload, AlertCircle } from "lucide-react";
+import { Download, Upload, AlertCircle, Moon, Sun } from "lucide-react";
 import { ChatTab } from '@/types/chat';
 import { Textarea } from "@/components/ui/textarea";
+import { themes } from '@/lib/themes';
+import { useTheme } from '@/lib/theme-context';
 
 export const IMAGE_MODELS = [
   "flux",
@@ -80,6 +82,7 @@ export const Settings = ({
   const [textModels, setTextModels] = useState<string[]>(DEFAULT_TEXT_MODELS);
   const [isLoadingModels, setIsLoadingModels] = useState(false);
   const [importError, setImportError] = useState<string | null>(null);
+  const { theme, isDark, setTheme, setIsDark, toggleDarkMode } = useTheme();
 
   useEffect(() => {
     setLocalProfileName(profileName);
@@ -234,8 +237,9 @@ export const Settings = ({
           onValueChange={setActiveTab}
           className="w-full pt-5"
         >
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="profile">Profile</TabsTrigger>
+            <TabsTrigger value="appearance">Appearance</TabsTrigger>
             <TabsTrigger value="settings">Models</TabsTrigger>
           </TabsList>
 
@@ -296,6 +300,34 @@ export const Settings = ({
                     <span className="text-sm text-red-400">{importError}</span>
                   </div>
                 )}
+              </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="appearance" className="mt-4">
+            <div className="grid gap-4 py-4">
+              {/* Theme Selection */}
+              <div className="flex flex-col gap-3">
+                <Label className="text-sm font-medium">Color Theme</Label>
+                <div className="theme-grid">
+                  {themes.map((themeOption) => (
+                    <div
+                      key={themeOption.name}
+                      className={`theme-preview theme-${themeOption.name} ${
+                        theme === themeOption.name ? 'selected' : ''
+                      }`}
+                      onClick={() => setTheme(themeOption.name)}
+                    >
+                      {theme === themeOption.name && (
+                        <span className="theme-preview-tick">
+                          <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M5 10.5L9 14.5L15 7.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                          </svg>
+                        </span>
+                      )}
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           </TabsContent>

@@ -7,8 +7,10 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { IMAGE_MODELS, DEFAULT_TEXT_MODELS } from '@/components/settings'
+import { themes } from '@/lib/themes'
+import { useTheme } from '@/lib/theme-context'
 
-const steps = ['name', 'systemPrompt', 'textModel', 'imageModel']
+const steps = ['name', 'theme', 'systemPrompt', 'textModel', 'imageModel']
 
 const systemPromptOptions = [
   {
@@ -32,12 +34,21 @@ const systemPromptOptions = [
 export function Onboarding({ onComplete }: { onComplete: () => void }) {
   const [step, setStep] = useState(0)
   const [name, setName] = useState('')
+  const [selectedTheme, setSelectedTheme] = useState('default')
   const [systemPrompt, setSystemPrompt] = useState(systemPromptOptions[0].value)
   const [customSystemPrompt, setCustomSystemPrompt] = useState('')
   const [textModel, setTextModel] = useState('')
   const [imageModel, setImageModel] = useState('')
   const [textModels, setTextModels] = useState<string[]>(DEFAULT_TEXT_MODELS)
   const [isLoadingModels, setIsLoadingModels] = useState(false)
+  const { setTheme } = useTheme()
+
+  // Apply theme preview when user selects a theme
+  useEffect(() => {
+    if (selectedTheme) {
+      setTheme(selectedTheme);
+    }
+  }, [selectedTheme, setTheme]);
 
   useEffect(() => {
     const fetchModels = async () => {
@@ -64,10 +75,12 @@ export function Onboarding({ onComplete }: { onComplete: () => void }) {
   const handleComplete = () => {
     const finalSystemPrompt = systemPrompt === "" ? customSystemPrompt : systemPrompt;
     localStorage.setItem('profileName', name)
+    localStorage.setItem('theme', selectedTheme)
     localStorage.setItem('systemPrompt', finalSystemPrompt)
     localStorage.setItem('textModel', textModel)
     localStorage.setItem('imageModel', imageModel)
     localStorage.setItem('onboardingComplete', 'true')
+    setTheme(selectedTheme)
     onComplete()
   }
 
@@ -89,9 +102,10 @@ export function Onboarding({ onComplete }: { onComplete: () => void }) {
   const isStepValid = () => {
     switch (step) {
       case 0: return name.trim() !== ''
-      case 1: return systemPrompt !== "" || customSystemPrompt.trim() !== ''
-      case 2: return textModel !== ''
-      case 3: return imageModel !== ''
+      case 1: return selectedTheme !== ''
+      case 2: return systemPrompt !== "" || customSystemPrompt.trim() !== ''
+      case 3: return textModel !== ''
+      case 4: return imageModel !== ''
       default: return false
     }
   }
@@ -120,6 +134,30 @@ export function Onboarding({ onComplete }: { onComplete: () => void }) {
         )}
         {step === 1 && (
           <div className="space-y-4">
+            <Label className="text-white">Choose a Theme</Label>
+            <div className="theme-grid">
+              {themes.map((theme) => (
+                <div
+                  key={theme.name}
+                  className={`theme-preview theme-${theme.name} ${
+                    selectedTheme === theme.name ? 'selected' : ''
+                  }`}
+                  onClick={() => setSelectedTheme(theme.name)}
+                >
+                  {selectedTheme === theme.name && (
+                    <span className="theme-preview-tick">
+                      <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M5 10.5L9 14.5L15 7.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    </span>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+        {step === 2 && (
+          <div className="space-y-4">
             <Label className="text-white">Choose a System Prompt</Label>
             <div className="space-y-2">
               {systemPromptOptions.map((option) => (
@@ -146,7 +184,7 @@ export function Onboarding({ onComplete }: { onComplete: () => void }) {
             )}
           </div>
         )}
-        {step === 2 && (
+        {step === 3 && (
           <div className="space-y-4">
             <Label className="text-white">Choose a Text Model</Label>
             <div className="flex flex-wrap gap-2">
@@ -167,7 +205,7 @@ export function Onboarding({ onComplete }: { onComplete: () => void }) {
             </div>
           </div>
         )}
-        {step === 3 && (
+        {step === 4 && (
           <div className="space-y-4">
             <Label className="text-white">Choose an Image Model</Label>
             <div className="flex flex-wrap gap-2">

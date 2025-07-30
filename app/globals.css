@@ -48,3 +48,43 @@
     --ring: 0 72.2% 50.6%;
   }
 }
+
+/* Theme color grid container */
+.theme-grid {
+  @apply grid grid-cols-4 rounded-lg overflow-hidden;
+}
+
+/* Theme color previews for theme selection */
+.theme-preview {
+  @apply w-full h-12 cursor-pointer transition-all duration-200 relative hover:opacity-80;
+}
+
+.theme-preview:nth-child(4n) {
+  @apply border-r-0;
+}
+
+.theme-preview:nth-child(n+5) {
+  @apply border-b-0;
+}
+
+.theme-preview.selected {
+  /* No border, no ring, just tick overlay */
+}
+
+.theme-preview-tick {
+  @apply absolute inset-0 flex items-center justify-center w-full h-full pointer-events-none;
+}
+
+.theme-preview-tick svg {
+  @apply w-6 h-6 text-white dark:text-white drop-shadow;
+}
+
+/* Theme-specific preview colors */
+.theme-default { background: hsl(0 72.2% 50.6%); }
+.theme-blue { background: hsl(221.2 83.2% 53.3%); }
+.theme-green { background: hsl(142.1 76.2% 36.3%); }
+.theme-purple { background: hsl(262.1 83.3% 57.8%); }
+.theme-orange { background: hsl(24.6 95% 53.1%); }
+.theme-pink { background: hsl(346.8 77.2% 49.8%); }
+.theme-teal { background: hsl(173 80% 40%); }
+.theme-amber { background: hsl(47.9 95.8% 53.1%); }
