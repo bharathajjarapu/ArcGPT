@@ -18,6 +18,8 @@ import {
   Paperclip,
   X,
   RotateCcw,
+  Upload,
+  FileImage,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { Message, ChatTab, MessageContent } from "@/types/chat"
@@ -63,10 +65,13 @@ export default function Chat({ isOpen, setIsOpen, activeChatId, onFork, chatTabs
   const [isInitialized, setIsInitialized] = useState(false)
   const [failedMessage, setFailedMessage] = useState<FailedMessage | null>(null)
   const [imageError, setImageError] = useState<string | null>(null)
+  const [isDragOver, setIsDragOver] = useState(false)
+  const [isListening, setIsListening] = useState(false)
 
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const dragOverlayRef = useRef<HTMLDivElement>(null)
 
   // Initialize from localStorage after component mounts to prevent hydration issues
   useEffect(() => {
@@ -109,6 +114,52 @@ export default function Chat({ isOpen, setIsOpen, activeChatId, onFork, chatTabs
       return content.filter(item => item.type === 'image_url') as Array<{type: 'image_url', image_url: {url: string}}>
     }
     return []
+  }
+
+  // Drag and drop handlers
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragOver(true)
+  }
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    // Only set drag over to false if we're leaving the entire drop zone
+    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+      setIsDragOver(false)
+    }
+  }
+
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragOver(false)
+
+    const files = Array.from(e.dataTransfer.files)
+    const imageFiles = files.filter(file => file.type.startsWith('image/'))
+
+    if (imageFiles.length === 0) {
+      setImageError('Please drop only image files')
+      return
+    }
+
+    setImageError(null)
+    
+    for (const file of imageFiles) {
+      try {
+        const base64 = await fileToBase64(file)
+        const imageId = Date.now().toString() + Math.random().toString(36).substr(2, 9)
+        setSelectedImages(prev => [...prev, {
+          id: imageId,
+          url: base64,
+          name: file.name
+        }])
+      } catch (error) {
+        setImageError(`Failed to process ${file.name}`)
+      }
+    }
   }
 
   useEffect(() => {
@@ -358,8 +409,6 @@ export default function Chat({ isOpen, setIsOpen, activeChatId, onFork, chatTabs
     }
   }, [])
 
-  const [isListening, setIsListening] = useState(false)
-
   const startListening = () => {
     if ("webkitSpeechRecognition" in window) {
       const recognition = new (window as any).webkitSpeechRecognition()
@@ -417,7 +466,41 @@ export default function Chat({ isOpen, setIsOpen, activeChatId, onFork, chatTabs
   }
 
   return (
-    <div className="flex-1 flex flex-col bg-black text-white">
+    <div 
+      className="flex-1 flex flex-col bg-black text-white relative"
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+    >
+      {/* Drag Overlay */}
+      {isDragOver && (
+        <div 
+          ref={dragOverlayRef}
+          className="absolute inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm"
+        >
+          <div className="text-center p-8 rounded-2xl bg-zinc-900/90 border-2 border-dashed border-blue-500/50 max-w-md mx-4">
+            <div className="flex flex-col items-center space-y-4">
+              <div className="relative">
+                <div className="w-16 h-16 bg-blue-500/20 rounded-full flex items-center justify-center mb-4">
+                  <Upload className="w-8 h-8 text-blue-400" />
+                </div>
+                <div className="absolute -top-1 -right-1 w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center">
+                  <FileImage className="w-3 h-3 text-white" />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <h3 className="text-xl font-semibold text-white">Drop Images Here</h3>
+                <p className="text-gray-300 text-sm">Release to add images to your message</p>
+              </div>
+              <div className="flex items-center space-x-2 text-blue-400 text-xs">
+                <FileImage className="w-4 h-4" />
+                <span>Supports: JPG, PNG, GIF, WebP</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      
       <header className="flex items-center pt-3 pb-0.8 px-3 border-b border-border/20">
         <Button
           variant="ghost"
@@ -445,7 +528,10 @@ export default function Chat({ isOpen, setIsOpen, activeChatId, onFork, chatTabs
           </Button>
         </div>
       </header>
-      <ScrollArea className="flex-1 p-4 pt-0 pb-0">
+      <ScrollArea className={cn(
+        "flex-1 p-4 pt-0 pb-0 transition-all duration-200",
+        isDragOver && "border-2 border-dashed border-blue-500/30 m-2 rounded-lg"
+      )}>
         <div className="absolute top-0 left-0 right-0 h-8 bg-gradient-to-b from-black/80 to-transparent pointer-events-none z-10" />
         <div className="mb-32 pb-1 max-w-4xl mx-auto pt-4">
           {conversationHistory.length <= 1 && <PromptSuggestions greeting={greeting} onSelect={handlePromptSelect} />}
@@ -606,8 +692,13 @@ export default function Chat({ isOpen, setIsOpen, activeChatId, onFork, chatTabs
                   handleSendMessage(input)
                 }
               }}
-              placeholder="Message Arc"
-              className="w-full bg-background p-4 border-gray-700/50 rounded-2xl pl-4 pr-36 py-4 focus:outline-none focus:ring-2 focus:ring-blue-500/50 resize-none min-h-[56px] max-h-32 border border-gray-700/50 shadow-lg text-white placeholder-gray-400"
+              placeholder={isDragOver ? "Drop images here..." : "Message Arc"}
+              className={cn(
+                "w-full bg-background p-4 border-gray-700/50 rounded-2xl pl-4 pr-36 py-4 focus:outline-none focus:ring-2 focus:ring-blue-500/50 resize-none min-h-[56px] max-h-32 border shadow-lg text-white placeholder-gray-400 transition-all duration-200",
+                isDragOver 
+                  ? "border-blue-500/50 ring-2 ring-blue-500/20 bg-blue-500/5" 
+                  : "border-gray-700/50"
+              )}
               style={{ scrollbarWidth: "none" }}
               rows={1}
               disabled={isLoading}
@@ -624,11 +715,19 @@ export default function Chat({ isOpen, setIsOpen, activeChatId, onFork, chatTabs
               />
               <Button
                 onClick={() => fileInputRef.current?.click()}
-                className="h-10 w-10 flex items-center justify-center rounded-lg bg-zinc-700 p-2 hover:bg-zinc-600 transition-colors disabled:opacity-50"
+                className={cn(
+                  "h-10 w-10 flex items-center justify-center rounded-lg p-2 transition-all duration-200 disabled:opacity-50",
+                  isDragOver 
+                    ? "bg-blue-600 hover:bg-blue-700 scale-110" 
+                    : "bg-zinc-700 hover:bg-zinc-600"
+                )}
                 title="Attach images"
                 disabled={isLoading}
               >
-                <Paperclip className="h-5 w-5 text-white" />
+                <Paperclip className={cn(
+                  "h-5 w-5 transition-colors",
+                  isDragOver ? "text-white" : "text-white"
+                )} />
                 <span className="sr-only">Attach image</span>
               </Button>
               <Button
