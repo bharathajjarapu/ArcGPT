@@ -250,9 +250,21 @@ export const Settings = ({
                   className="w-full"
                 />
               </div>
-              
+              {/* System Prompt moved here */}
+              <div className="flex flex-col gap-3">
+                <Label htmlFor="system-prompt">
+                  System Prompt
+                </Label>
+                <Textarea
+                  id="system-prompt"
+                  value={localSystemPrompt}
+                  onChange={(e) => setLocalSystemPrompt(e.target.value)}
+                  className="w-full"
+                  rows={3}
+                />
+              </div>
               {/* Export/Import Section */}
-              <div className="grid gap-4 pt-4">
+              <div className="grid gap-3">
                 <div className="flex items-center gap-2">
                   <Label className="text-sm font-medium">Backup & Restore</Label>
                 </div>
@@ -328,19 +340,6 @@ export const Settings = ({
 
           <TabsContent value="settings" className="mt-4">
             <div className="grid gap-4 py-4">
-              <div className="flex flex-col gap-2">
-                <Label htmlFor="system-prompt">
-                  System Prompt
-                </Label>
-                <Textarea
-                  id="system-prompt"
-                  value={localSystemPrompt}
-                  onChange={(e) => setLocalSystemPrompt(e.target.value)}
-                  className="w-full"
-                  rows={3}
-                />
-              </div>
-
               {/* Text Model field */}
               <div className="grid grid-cols-[auto,1fr] items-center gap-4">
                 <Label htmlFor="text-model">

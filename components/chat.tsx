@@ -182,13 +182,26 @@ export default function Chat({ isOpen, setIsOpen, activeChatId, onFork, chatTabs
       setSystemPrompt(savedSystemPrompt)
     }
 
-    const baseSystemPrompt = `You are an AI assistant named Arc. You help user with your queries. Respond to User only in Markdown.
-    If asked for equations use like the following equation. $$ L = \frac{1}{2} \rho v^2 S C_L $$ . Make sure to one extra line space before and after the equation.
-    If asked to make or generate or show an image, Embed the Prompt of Image in Markdown Like ![](https://pollinations.ai/p/A%20Car%20in%20a%20Lake?width=1280&height=720&nologo=true&model=${selectedImageModel}) 
-      Current time: ${formattedTime}
-      Current date: ${formattedDate}
-      
-      ${savedSystemPrompt || ''}`
+    const baseSystemPrompt = `You are an AI assistant named Arc. You help the user with their queries. Respond to the user only in Markdown.
+
+    For math equations:
+    - Use single dollar signs ($...$) for inline math.
+    - Use double dollar signs ($$...$$) for display math, and ensure there is a blank line before and after the equation block for proper rendering.
+    - Example display equation:
+
+    $$
+    L = \frac{1}{2} \rho v^2 S C_L
+    $$
+
+    For images:
+    - If asked to make, generate, or show an image, embed the prompt in Markdown using:
+      ![](https://pollinations.ai/p/<PROMPT>?width=1280&height=720&nologo=true&model=${selectedImageModel})
+    - Replace <PROMPT> with the image description, URL-encoded.
+
+    Current time: ${formattedTime}
+    Current date: ${formattedDate}
+    
+    ${savedSystemPrompt || ''}`
 
     const systemMessage: Message = {
       id: "init",
@@ -282,7 +295,8 @@ export default function Chat({ isOpen, setIsOpen, activeChatId, onFork, chatTabs
     setSelectedImages(prev => prev.filter(img => img.id !== imageId))
   }
 
-  const handleSendMessage = async (content: string, retryImages?: Array<{id: string, url: string, name: string}>) => {
+  // Update handleSendMessage to accept an optional messageId for retries
+  const handleSendMessage = async (content: string, retryImages?: Array<{id: string, url: string, name: string}>, retryMessageId?: string) => {
     if (isLoading || (!content.trim() && (selectedImages.length === 0 && (!retryImages || retryImages.length === 0)))) {
       return
     }
@@ -308,7 +322,7 @@ export default function Chat({ isOpen, setIsOpen, activeChatId, onFork, chatTabs
       userMessageContent = messageContent
     }
     const userMessage: Message = {
-      id: Date.now().toString(),
+      id: retryMessageId || Date.now().toString(),
       content: userMessageContent,
       role: "user",
       agent: prefix ? prefix.slice(1) : null,
@@ -317,7 +331,23 @@ export default function Chat({ isOpen, setIsOpen, activeChatId, onFork, chatTabs
     setSelectedImages([])
     setIsLoading(true)
     setFailedMessage(null)
-    const updatedConversationHistory = [...conversationHistory, userMessage]
+    let updatedConversationHistory: Message[]
+    if (retryMessageId) {
+      // Replace the failed message and any following AI error message
+      updatedConversationHistory = conversationHistory.filter((msg, idx, arr) => {
+        if (msg.id === retryMessageId) {
+          // Remove this user message and the next AI error message (if any)
+          if (arr[idx + 1] && arr[idx + 1].role === "ai" && arr[idx + 1].content.toString().includes("Sorry")) {
+            arr.splice(idx + 1, 1)
+          }
+          return false
+        }
+        return true
+      })
+      updatedConversationHistory = [...updatedConversationHistory, userMessage]
+    } else {
+      updatedConversationHistory = [...conversationHistory, userMessage]
+    }
     setConversationHistory(updatedConversationHistory)
     try {
       let response
@@ -440,24 +470,11 @@ export default function Chat({ isOpen, setIsOpen, activeChatId, onFork, chatTabs
     }
   }
 
+  // Update handleRetry to use the same message id and not duplicate user messages
   const handleRetry = (failedMsg: FailedMessage) => {
     if (!failedMsg.retryData) return
-    
-    // Remove the failed message and any error messages that followed it
-    setConversationHistory(prev => {
-      const failedIndex = prev.findIndex(msg => msg.id === failedMsg.id)
-      if (failedIndex !== -1) {
-        // Remove the failed message and any subsequent AI error messages
-        return prev.slice(0, failedIndex)
-      }
-      return prev
-    })
-    
-    // Clear the failed message state
     setFailedMessage(null)
-    
-    // Retry sending the message
-    handleSendMessage(failedMsg.retryData.text, failedMsg.retryData.images)
+    handleSendMessage(failedMsg.retryData.text, failedMsg.retryData.images, failedMsg.id)
   }
 
   // Don't render until initialized to prevent hydration mismatch
@@ -528,10 +545,7 @@ export default function Chat({ isOpen, setIsOpen, activeChatId, onFork, chatTabs
           </Button>
         </div>
       </header>
-      <ScrollArea className={cn(
-        "flex-1 p-4 pt-0 pb-0 transition-all duration-200",
-        isDragOver && "border-2 border-dashed border-blue-500/30 m-2 rounded-lg"
-      )}>
+      <ScrollArea className="flex-1 p-4 pt-0 pb-0 transition-all duration-200">
         <div className="absolute top-0 left-0 right-0 h-8 bg-gradient-to-b from-black/80 to-transparent pointer-events-none z-10" />
         <div className="mb-32 pb-1 max-w-4xl mx-auto pt-4">
           {conversationHistory.length <= 1 && <PromptSuggestions greeting={greeting} onSelect={handlePromptSelect} />}
@@ -609,14 +623,15 @@ export default function Chat({ isOpen, setIsOpen, activeChatId, onFork, chatTabs
                           {isFailed && (
                             <div className="mt-2 flex items-center justify-end">
                               <Button
-                                size="sm"
-                                className="bg-blue-600 hover:bg-blue-700 text-white p-1.5 rounded-md flex items-center gap-1.5"
+                                size="icon"
+                                className="bg-blue-600 hover:bg-blue-700 text-white p-1 rounded-md flex items-center"
                                 onClick={() => handleRetry(failedMessage!)}
                                 disabled={isLoading}
                                 title="Retry sending message"
+                                style={{ width: 28, height: 28, minWidth: 28, minHeight: 28 }}
                               >
-                                <RotateCcw className="w-3 h-3" />
-                                <span className="text-xs">Retry</span>
+                                <RotateCcw className="w-4 h-4" />
+                                <span className="sr-only">Retry</span>
                               </Button>
                             </div>
                           )}
@@ -715,19 +730,11 @@ export default function Chat({ isOpen, setIsOpen, activeChatId, onFork, chatTabs
               />
               <Button
                 onClick={() => fileInputRef.current?.click()}
-                className={cn(
-                  "h-10 w-10 flex items-center justify-center rounded-lg p-2 transition-all duration-200 disabled:opacity-50",
-                  isDragOver 
-                    ? "bg-blue-600 hover:bg-blue-700 scale-110" 
-                    : "bg-zinc-700 hover:bg-zinc-600"
-                )}
+                className="h-10 w-10 flex items-center justify-center rounded-lg p-2 transition-all duration-200 disabled:opacity-50 bg-zinc-700 hover:bg-zinc-600"
                 title="Attach images"
                 disabled={isLoading}
               >
-                <Paperclip className={cn(
-                  "h-5 w-5 transition-colors",
-                  isDragOver ? "text-white" : "text-white"
-                )} />
+                <Paperclip className="h-5 w-5 text-white" />
                 <span className="sr-only">Attach image</span>
               </Button>
               <Button
