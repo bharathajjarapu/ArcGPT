@@ -187,11 +187,6 @@ export default function Chat({ isOpen, setIsOpen, activeChatId, onFork, chatTabs
     For math equations:
     - Use single dollar signs ($...$) for inline math.
     - Use double dollar signs ($$...$$) for display math, and ensure there is a blank line before and after the equation block for proper rendering.
-    - Example display equation:
-
-    $$
-    L = \frac{1}{2} \rho v^2 S C_L
-    $$
 
     For images:
     - If asked to make, generate, or show an image, embed the prompt in Markdown using:
@@ -479,39 +474,30 @@ export default function Chat({ isOpen, setIsOpen, activeChatId, onFork, chatTabs
 
   // Don't render until initialized to prevent hydration mismatch
   if (!isInitialized) {
-    return <div className="flex-1 flex flex-col bg-black text-white" />
+    return <div className="flex-1 flex flex-col bg-background text-foreground" />
   }
 
   return (
     <div 
-      className="flex-1 flex flex-col bg-black text-white relative"
+      className="flex-1 flex flex-col bg-background text-foreground relative"
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
     >
       {/* Drag Overlay */}
       {isDragOver && (
-        <div 
+        <div
           ref={dragOverlayRef}
-          className="absolute inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm"
+          className="absolute inset-0 z-50 flex items-center justify-center bg-background/70 backdrop-blur-sm"
         >
-          <div className="text-center p-8 rounded-2xl bg-zinc-900/90 border-2 border-dashed border-blue-500/50 max-w-md mx-4">
-            <div className="flex flex-col items-center space-y-4">
-              <div className="relative">
-                <div className="w-16 h-16 bg-blue-500/20 rounded-full flex items-center justify-center mb-4">
-                  <Upload className="w-8 h-8 text-blue-400" />
+          <div className="mx-4 max-w-md w-full">
+            <div className="text-center px-6 py-8 rounded-xl bg-card/90 border-2 border-dashed border-primary/30 shadow-lg">
+              <div className="flex flex-col items-center gap-3">
+                <div className="w-14 h-14 rounded-full bg-primary/15 flex items-center justify-center">
+                  <Upload className="w-7 h-7 text-primary" />
                 </div>
-                <div className="absolute -top-1 -right-1 w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center">
-                  <FileImage className="w-3 h-3 text-white" />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <h3 className="text-xl font-semibold text-white">Drop Images Here</h3>
-                <p className="text-gray-300 text-sm">Release to add images to your message</p>
-              </div>
-              <div className="flex items-center space-x-2 text-blue-400 text-xs">
-                <FileImage className="w-4 h-4" />
-                <span>Supports: JPG, PNG, GIF, WebP</span>
+                <h3 className="text-lg font-medium">Drop images to upload</h3>
+                <p className="text-xs text-muted-foreground">JPG, PNG, GIF, WebP • Max 500KB each</p>
               </div>
             </div>
           </div>
@@ -523,30 +509,30 @@ export default function Chat({ isOpen, setIsOpen, activeChatId, onFork, chatTabs
           variant="ghost"
           size="icon"
           onClick={() => setIsOpen(!isOpen)}
-          className="mr-2 text-white hover:bg-white/10"
+          className="mr-2"
         >
           <SidebarIcon className="h-6 w-6" />
         </Button>
         <h1 className="text-xl font-semibold">ArcGPT</h1>
         <div className="ml-auto flex items-center">
-          <Button variant="ghost" size="icon" onClick={clearChat} className="mr-2 text-white hover:bg-white/10">
+          <Button variant="ghost" size="icon" onClick={clearChat} className="mr-2">
             <Trash2 className="h-6 w-6" />
           </Button>
-          <Button variant="ghost" size="icon" onClick={onFork} className="mr-2 text-white hover:bg-white/10">
+          <Button variant="ghost" size="icon" onClick={onFork} className="mr-2">
             <GitForkIcon className="h-6 w-6" />
           </Button>
           <Button
             variant="ghost"
             size="icon"
             onClick={() => setIsSettingsOpen(true)}
-            className="text-white hover:bg-white/10"
+            className=""
           >
             <SettingsIcon className="h-6 w-6" />
           </Button>
         </div>
       </header>
       <ScrollArea className="flex-1 p-4 pt-0 pb-0 transition-all duration-200">
-        <div className="absolute top-0 left-0 right-0 h-8 bg-gradient-to-b from-black/80 to-transparent pointer-events-none z-10" />
+        <div className="absolute top-0 left-0 right-0 h-8 bg-gradient-to-b from-background/80 to-transparent pointer-events-none z-10" />
         <div className="mb-32 pb-1 max-w-4xl mx-auto pt-4">
           {conversationHistory.length <= 1 && <PromptSuggestions greeting={greeting} onSelect={handlePromptSelect} />}
           {conversationHistory
@@ -571,23 +557,23 @@ export default function Chat({ isOpen, setIsOpen, activeChatId, onFork, chatTabs
                     <div
                       className={cn(
                         "min-w-[32px] min-h-[32px] w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 mt-1",
-                        message.role === "user" ? "bg-blue-600" : "bg-zinc-800",
+                        message.role === "user" ? "bg-primary text-primary-foreground" : "bg-muted text-foreground",
                       )}
                     >
                       {message.role === "user" ? (
                         AgentIcon ? (
-                          <AgentIcon className="h-5 w-5 text-white flex-shrink-0" />
+                          <AgentIcon className="h-5 w-5 text-primary-foreground flex-shrink-0" />
                         ) : (
-                          <User className="h-5 w-5 text-white flex-shrink-0" />
+                          <User className="h-5 w-5 text-primary-foreground flex-shrink-0" />
                         )
                       ) : (
-                        <Bot className="h-5 w-5 text-white flex-shrink-0" />
+                        <Bot className="h-5 w-5 text-foreground flex-shrink-0" />
                       )}
                     </div>
                     <div
                       className={cn(
-                        "group relative rounded-2xl overflow-hidden",
-                        message.role === "user" ? "bg-blue-600 text-white" : "bg-zinc-800 text-white",
+                        "group relative rounded-xl overflow-hidden border",
+                        message.role === "user" ? "bg-primary text-primary-foreground border-primary/20" : "bg-muted text-foreground border-border/50",
                       )}
                     >
                       {message.role === "user" ? (
@@ -604,7 +590,7 @@ export default function Chat({ isOpen, setIsOpen, activeChatId, onFork, chatTabs
                                   <img
                                     src={img.image_url.url}
                                     alt={`Uploaded image ${idx + 1}`}
-                                    className="w-full h-auto rounded-md max-h-60 object-cover border border-white/20"
+                                    className="w-full h-auto rounded-md max-h-60 object-cover border border-primary-foreground/20"
                                   />
                                 </div>
                               ))}
@@ -616,7 +602,7 @@ export default function Chat({ isOpen, setIsOpen, activeChatId, onFork, chatTabs
                             </div>
                           )}
                           {message.agent && (
-                            <div className="text-xs text-blue-200 mt-2 opacity-80">
+                            <div className="text-xs text-primary-foreground/80 mt-2 opacity-80">
                               {message.agent} agent
                             </div>
                           )}
@@ -624,7 +610,7 @@ export default function Chat({ isOpen, setIsOpen, activeChatId, onFork, chatTabs
                             <div className="mt-2 flex items-center justify-end">
                               <Button
                                 size="icon"
-                                className="bg-blue-600 hover:bg-blue-700 text-white p-1 rounded-md flex items-center"
+                                className="bg-primary hover:bg-primary/90 text-primary-foreground p-1 rounded-md flex items-center"
                                 onClick={() => handleRetry(failedMessage!)}
                                 disabled={isLoading}
                                 title="Retry sending message"
@@ -654,8 +640,8 @@ export default function Chat({ isOpen, setIsOpen, activeChatId, onFork, chatTabs
           {isLoading && (
             <div className="mb-4 flex w-full justify-start">
               <div className="flex items-start gap-3 w-fit">
-                <div className="min-w-[32px] min-h-[32px] w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 bg-zinc-800 mt-1">
-                  <Bot className="h-5 w-5 text-white flex-shrink-0" />
+                <div className="min-w-[32px] min-h-[32px] w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 bg-muted mt-1">
+                  <Bot className="h-5 w-5 text-foreground flex-shrink-0" />
                 </div>
                 <TypingIndicator />
               </div>
@@ -666,23 +652,24 @@ export default function Chat({ isOpen, setIsOpen, activeChatId, onFork, chatTabs
         <div className="fixed bottom-0 left-0 right-0 p-4 pt-0 max-w-4xl mx-auto w-full z-10">
           {/* Image Preview */}
           {selectedImages.length > 0 && (
-            <div className="mb-3 p-4 bg-background p-4 hover:bg-muted border-gray-700/50 rounded-xl border border-gray-700/50 shadow-lg">
+            <div className="mb-3 p-3 bg-card hover:bg-muted/60 border border-border/50 rounded-xl shadow-sm">
               <div className="flex flex-wrap gap-3">
                 {selectedImages.map((image) => (
                   <div key={image.id} className="relative group">
                     <img
                       src={image.url}
                       alt={image.name}
-                      className="w-24 h-24 object-cover rounded-lg border border-gray-600 shadow-md"
+                      className="w-24 h-24 object-cover rounded-lg border border-border/50 shadow-sm"
                     />
                     <button
                       onClick={() => removeImage(image.id)}
-                      className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600 transition-colors opacity-0 group-hover:opacity-100 shadow-lg"
+                      title="Remove image"
+                      className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-destructive/90 transition-colors opacity-0 group-hover:opacity-100 shadow-md"
                     >
                       <X className="w-4 h-4" />
                     </button>
-                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent text-white text-xs p-2 rounded-b-lg">
-                      <div className="truncate font-medium">{image.name}</div>
+                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-background/80 to-transparent text-foreground text-[10px] px-2 py-1 rounded-b-lg">
+                      <div className="truncate">{image.name}</div>
                     </div>
                   </div>
                 ))}
@@ -692,7 +679,7 @@ export default function Chat({ isOpen, setIsOpen, activeChatId, onFork, chatTabs
           
           {/* Image Error Message */}
           {imageError && (
-            <div className="mb-2 p-2 bg-red-700/50 text-white rounded-lg border border-red-400/50 text-sm font-medium">
+            <div className="mb-2 p-2 bg-destructive/10 text-destructive-foreground rounded-lg border border-destructive/30 text-sm font-medium">
               {imageError}
             </div>
           )}
@@ -709,10 +696,10 @@ export default function Chat({ isOpen, setIsOpen, activeChatId, onFork, chatTabs
               }}
               placeholder={isDragOver ? "Drop images here..." : "Message Arc"}
               className={cn(
-                "w-full bg-background p-4 border-gray-700/50 rounded-2xl pl-4 pr-36 py-4 focus:outline-none focus:ring-2 focus:ring-blue-500/50 resize-none min-h-[56px] max-h-32 border shadow-lg text-white placeholder-gray-400 transition-all duration-200",
+                "w-full bg-background p-4 border-border/50 rounded-2xl pl-4 pr-36 py-4 focus:outline-none focus:ring-2 focus:ring-primary/40 resize-none min-h-[56px] max-h-32 border shadow-lg text-foreground placeholder:text-muted-foreground transition-all duration-200",
                 isDragOver 
-                  ? "border-blue-500/50 ring-2 ring-blue-500/20 bg-blue-500/5" 
-                  : "border-gray-700/50"
+                  ? "border-primary/40 ring-2 ring-primary/20 bg-primary/5" 
+                  : "border-border/50"
               )}
               style={{ scrollbarWidth: "none" }}
               rows={1}
@@ -730,25 +717,25 @@ export default function Chat({ isOpen, setIsOpen, activeChatId, onFork, chatTabs
               />
               <Button
                 onClick={() => fileInputRef.current?.click()}
-                className="h-10 w-10 flex items-center justify-center rounded-lg p-2 transition-all duration-200 disabled:opacity-50 bg-zinc-700 hover:bg-zinc-600"
+                className="h-10 w-10 flex items-center justify-center rounded-lg p-2 transition-all duration-200 disabled:opacity-50 bg-secondary hover:bg-secondary/80 text-secondary-foreground"
                 title="Attach images"
                 disabled={isLoading}
               >
-                <Paperclip className="h-5 w-5 text-white" />
+                <Paperclip className="h-5 w-5" />
                 <span className="sr-only">Attach image</span>
               </Button>
               <Button
                 onClick={startListening}
-                className="h-10 w-10 flex items-center justify-center rounded-lg bg-zinc-700 p-2 hover:bg-zinc-600 transition-colors disabled:opacity-50"
+                className="h-10 w-10 flex items-center justify-center rounded-lg bg-secondary p-2 hover:bg-secondary/80 transition-colors disabled:opacity-50 text-secondary-foreground"
                 disabled={isListening || isLoading}
                 title="Voice input"
               >
-                <Mic className={`h-5 w-5 ${isListening ? "text-red-500" : "text-white"}`} />
+                <Mic className={`h-5 w-5 ${isListening ? "text-red-500" : ""}`} />
                 <span className="sr-only">Start voice input</span>
               </Button>
               <Button
                 onClick={() => handleSendMessage(input)}
-                className="h-10 w-10 flex items-center justify-center rounded-lg bg-blue-600 p-2 hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="h-10 w-10 flex items-center justify-center rounded-lg bg-primary p-2 hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-primary-foreground"
                 disabled={(!input.trim() && selectedImages.length === 0) || isLoading}
                 title="Send message"
               >

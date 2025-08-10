@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils"
 
 export function TypingIndicator() {
   return (
-    <div className="flex items-center space-x-2 p-2 bg-zinc-800 rounded-lg">
+    <div className="flex items-center space-x-2 p-2 bg-muted rounded-lg border border-border/50">
       <div className="typing-indicator">
         <span></span>
         <span></span>
@@ -22,7 +22,7 @@ const styles = `
   .typing-indicator span {
     height: 8px;
     width: 8px;
-    background-color: #fff;
+    background-color: hsl(var(--foreground));
     border-radius: 50%;
     display: inline-block;
     margin-right: 4px;

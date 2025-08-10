@@ -46,7 +46,7 @@ export default function Sidebar({
           className="w-full justify-start gap-2 text-white"
         >
           <PlusCircle className="h-4 w-4" />
-          Chat
+          New Chat
         </Button>
       </div>
       <ScrollArea className="flex-1 px-3">
