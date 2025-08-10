@@ -6,7 +6,7 @@ const PROMPT_SUGGESTIONS = [
   "Make an Image of close-up portrait of Hacker",
   "Find the Integral & Derivative of sin(3x)dx",
   "Explain AI & Neural Networks with Math",
-  "@search Latest News Updates from Hyderabad",
+  "@code Write Fibonacci Series in Python",
   "@code Write Code for Palindrome in Python",
   "@imagine Cinematic Shot of Skies of Pandora",
 ]
