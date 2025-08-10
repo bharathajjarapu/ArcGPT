@@ -33,9 +33,9 @@ export const IMAGE_MODELS = [
 
 // Default text models as fallback
 export const DEFAULT_TEXT_MODELS = [
-  "openai-fast",
   "openai",
-  "phi",
+  "mistral",
+  "gpt-5-nano",
 ];
 
 interface SettingsProps {
@@ -75,13 +75,22 @@ export const Settings = ({
   const [textModels, setTextModels] = useState<string[]>(DEFAULT_TEXT_MODELS);
   const [isLoadingModels, setIsLoadingModels] = useState(false);
   const [importError, setImportError] = useState<string | null>(null);
+  const [textSelectOpen, setTextSelectOpen] = useState(false);
+  const [imageSelectOpen, setImageSelectOpen] = useState(false);
   const { theme, isDark, setTheme, setIsDark, toggleDarkMode } = useTheme();
 
   useEffect(() => {
-    setLocalProfileName(profileName);
-    setLocalSystemPrompt(systemPrompt);
-    setLocalTextModel(selectedTextModel || "openai-fast");
-    setLocalImageModel(selectedImageModel);
+    if (isOpen) {
+      // Reset local state to current saved values when dialog opens
+      setLocalProfileName(profileName);
+      setLocalSystemPrompt(systemPrompt);
+      setLocalTextModel(selectedTextModel || "openai-fast");
+      setLocalImageModel(selectedImageModel);
+    } else {
+      // Ensure all select dropdowns are closed when dialog is closed
+      setTextSelectOpen(false);
+      setImageSelectOpen(false);
+    }
   }, [isOpen, profileName, systemPrompt, selectedTextModel, selectedImageModel]);
 
   useEffect(() => {
@@ -92,8 +101,9 @@ export const Settings = ({
         if (response.ok) {
           const data = await response.json();
           if (data && Array.isArray(data)) {
-            // Only allow openai, openai-fast, phi
-            setTextModels(data.map((model: any) => model.name || model).filter((m: string) => ["openai", "openai-fast", "phi"].includes(m)));
+            // Always show all requested models regardless of API response
+            const requestedModels = ["openai", "mistral", "gpt-5-nano"];
+            setTextModels(requestedModels);
           }
         }
       } catch (error) {
@@ -114,10 +124,28 @@ export const Settings = ({
     setSelectedImageModel(localImageModel);
     localStorage.setItem("profileName", localProfileName);
     localStorage.setItem("systemPrompt", localSystemPrompt);
-    localStorage.setItem("textModel", localTextModel || "openai-fast");
+    localStorage.setItem("textModel", localTextModel || "openai");
     localStorage.setItem("imageModel", localImageModel);
     toast.success("Settings saved successfully.");
     setIsOpen(false);
+  };
+
+  const handleDialogChange = (open: boolean) => {
+    if (!open) {
+      // Close any open select dropdowns immediately
+      setTextSelectOpen(false);
+      setImageSelectOpen(false);
+      
+      // Reset local state to saved values when dialog closes without saving
+      setLocalProfileName(profileName);
+      setLocalSystemPrompt(systemPrompt);
+      setLocalTextModel(selectedTextModel || "openai-fast");
+      setLocalImageModel(selectedImageModel);
+      
+      // Reset the active tab to profile
+      setActiveTab("profile");
+    }
+    setIsOpen(open);
   };
 
   const exportChats = () => {
@@ -128,7 +156,7 @@ export const Settings = ({
         settings: {
           profileName: localStorage.getItem("profileName") || "User",
           systemPrompt: localStorage.getItem("systemPrompt") || "",
-          textModel: localStorage.getItem("textModel") || "openai-fast",
+          textModel: localStorage.getItem("textModel") || "openai",
           imageModel: localStorage.getItem("imageModel") || "flux",
         },
         exportDate: new Date().toISOString(),
@@ -220,7 +248,7 @@ export const Settings = ({
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <Dialog open={isOpen} onOpenChange={handleDialogChange}>
       <DialogContent className="sm:max-w-[450px] bg-zinc-950 border border-zinc-800">
         <DialogTitle>Settings</DialogTitle>
         <DialogDescription>
@@ -349,6 +377,8 @@ export const Settings = ({
                   value={localTextModel}
                   onValueChange={setLocalTextModel}
                   disabled={isLoadingModels}
+                  open={textSelectOpen}
+                  onOpenChange={setTextSelectOpen}
                 >
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder={isLoadingModels ? "Loading models..." : "Select text model"} />
@@ -371,6 +401,8 @@ export const Settings = ({
                 <Select
                   value={localImageModel}
                   onValueChange={setLocalImageModel}
+                  open={imageSelectOpen}
+                  onOpenChange={setImageSelectOpen}
                 >
                   <SelectTrigger id="image-model" className="w-full">
                     <SelectValue placeholder="Select image model" />
@@ -389,7 +421,7 @@ export const Settings = ({
         </Tabs>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => setIsOpen(false)}>
+          <Button variant="outline" onClick={() => handleDialogChange(false)}>
             Cancel
           </Button>
           <Button onClick={handleSaveSettings}>Save</Button>

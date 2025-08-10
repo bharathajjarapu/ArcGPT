@@ -35,15 +35,15 @@ export default function Sidebar({
   return (
     <div
       className={cn(
-        "h-full bg-zinc-950 border-r border-border transition-all duration-300 ease-in-out flex flex-col",
+        "h-full bg-zinc-950 border-r border-border overflow-hidden transition-[width,min-width] duration-300 ease-in-out flex flex-col",
         isOpen ? "w-[200px] min-w-[200px]" : "w-0 min-w-0"
       )}
     >
-      <div className="p-3">
+      <div className="px-3 py-3">
         <Button 
           onClick={addNewChat} 
           variant="outline" 
-          className="w-full justify-start gap-2 text-white"
+          className="w-full justify-start gap-2 text-white px-2 py-2"
         >
           <PlusCircle className="h-4 w-4" />
           New Chat
@@ -82,7 +82,7 @@ export default function Sidebar({
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity text-white hover:text-white"
+                      className="h-6 w-6 opacity-100 text-white hover:text-white hover:bg-zinc-800"
                       onClick={(e) => {
                         e.stopPropagation()
                         setEditingId(chat.id)
@@ -93,7 +93,7 @@ export default function Sidebar({
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity text-white hover:text-white"
+                      className="h-6 w-6 opacity-100 text-white hover:text-white hover:bg-zinc-800"
                       onClick={(e) => {
                         e.stopPropagation()
                         deleteChat(chat.id)

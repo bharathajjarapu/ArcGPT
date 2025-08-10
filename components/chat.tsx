@@ -504,7 +504,7 @@ export default function Chat({ isOpen, setIsOpen, activeChatId, onFork, chatTabs
         </div>
       )}
       
-      <header className="flex items-center pt-3 pb-0.8 px-3 border-b border-border/20">
+      <header className="flex items-center pt-3 pb-0.8 px-3">
         <Button
           variant="ghost"
           size="icon"
@@ -532,7 +532,6 @@ export default function Chat({ isOpen, setIsOpen, activeChatId, onFork, chatTabs
         </div>
       </header>
       <ScrollArea className="flex-1 p-4 pt-0 pb-0 transition-all duration-200">
-        <div className="absolute top-0 left-0 right-0 h-8 bg-gradient-to-b from-background/80 to-transparent pointer-events-none z-10" />
         <div className="mb-32 pb-1 max-w-4xl mx-auto pt-4">
           {conversationHistory.length <= 1 && <PromptSuggestions greeting={greeting} onSelect={handlePromptSelect} />}
           {conversationHistory
