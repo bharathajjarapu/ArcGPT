@@ -31,11 +31,11 @@ export function PromptSuggestions({ greeting, onSelect }: {
     return null;
   }
   return (
-    <div className="pt-20 pl-20 pr-20">
-      <h2 className="text-5xl font-bold text-center mb-4">
+    <div className="min-h-[calc(100vh-14rem)] flex flex-col items-center justify-center px-6 md:px-20">
+      <h2 className="text-5xl font-bold text-center mb-6">
         {greeting}
       </h2>
-      <div className="pt-10 grid grid-cols-1 md:grid-cols-3 gap-4 flex">
+      <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
         {PROMPT_SUGGESTIONS.map((suggestion, index) => (
           <button
             key={index}
