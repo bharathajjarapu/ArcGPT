@@ -49,4 +49,3 @@ export function PromptSuggestions({ greeting, onSelect }: {
     </div>
   )
 }
-

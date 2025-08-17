@@ -10,8 +10,9 @@ export const metadata = {
   title: 'ArcGPT',
   description: 'A ChatGPT Clone built with ShadCN UI Powered By Pollinations AI',
   icons: {
-    icon: '/favicon.ico',
-    apple: '/apple-touch-icon.png',
+    icon: '/arcchat.png',
+    apple: '/arcchat.png',
+    shortcut: '/arcchat.png',
   },
 }
 
