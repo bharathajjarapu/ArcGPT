@@ -100,11 +100,26 @@ export const Settings = ({
         const response = await fetch('/api/models');
         if (response.ok) {
           const data = await response.json();
-          if (data && Array.isArray(data)) {
-            // Always show all requested models regardless of API response
-            const requestedModels = ["openai", "mistral", "gpt-5-nano"];
-            setTextModels(requestedModels);
+          let models: string[] = [];
+          const sourceArray = Array.isArray(data)
+            ? data
+            : (Array.isArray((data as any)?.models) ? (data as any).models : []);
+          if (Array.isArray(sourceArray)) {
+            models = sourceArray
+              .map((item: any) => {
+                if (typeof item === 'string') return item;
+                if (item && typeof item === 'object') {
+                  return item.id || item.name || item.model || item.slug || item.value || null;
+                }
+                return null;
+              })
+              .filter(Boolean);
           }
+
+          // Ensure some sensible defaults are present
+          const ensure = ["openai", "mistral", "gpt-5-nano"];
+          const merged = Array.from(new Set([...(models || []), ...ensure]));
+          setTextModels(merged.length ? merged : DEFAULT_TEXT_MODELS);
         }
       } catch (error) {
         console.error('Error fetching models:', error);

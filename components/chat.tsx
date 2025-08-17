@@ -4,6 +4,14 @@ import { useState, useRef, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogFooter,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog"
+import {
   SidebarIcon,
   ArrowUp,
   User,
@@ -67,6 +75,7 @@ export default function Chat({ isOpen, setIsOpen, activeChatId, onFork, chatTabs
   const [imageError, setImageError] = useState<string | null>(null)
   const [isDragOver, setIsDragOver] = useState(false)
   const [isListening, setIsListening] = useState(false)
+  const [isClearConfirmOpen, setIsClearConfirmOpen] = useState(false)
 
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
@@ -358,7 +367,17 @@ export default function Chat({ isOpen, setIsOpen, activeChatId, onFork, chatTabs
           role: "ai",
           agent: null,
         }
-        setConversationHistory(prev => [...prev, aiMessage])
+        setConversationHistory(prev => {
+          const hadAiBefore = prev.some(m => m.role === 'ai')
+          const next = [...prev, aiMessage]
+          // Trigger auto-rename only on the first AI reply
+          if (!hadAiBefore) {
+            const firstUserText = getContentAsString(userMessageContent)
+            // Fire and forget
+            maybeAutoRenameChat(firstUserText)
+          }
+          return next
+        })
       } else {
         const errorMessage: Message = {
           id: (Date.now() + 2).toString(),
@@ -411,6 +430,41 @@ export default function Chat({ isOpen, setIsOpen, activeChatId, onFork, chatTabs
       setSelectedImages([])
       setInput("")
       localStorage.setItem(`chat_${activeChatId}`, JSON.stringify([systemMessage]))
+    }
+  }
+
+  // Attempt to auto-rename the active chat after the first AI reply
+  const maybeAutoRenameChat = async (firstUserMessageText: string) => {
+    try {
+      const active = chatTabs.find((t) => t.id === activeChatId)
+      if (!active || active.name !== "Chat") return
+
+      // Fallback title from first user message
+      const fallback = firstUserMessageText.trim().slice(0, 40) || "New Chat"
+
+      // Ask the model for a short title
+      const titlePrompt: Message[] = [
+        { id: "sys-title", role: "system", content: "You generate a single-word chat title. Rules: reply with exactly one word, no spaces, no punctuation or quotes. Prefer TitleCase. If multiple words are needed, merge them into one (e.g., MachineLearning). Reply with the title only." },
+        { id: "user-title", role: "user", content: `First message: ${firstUserMessageText}` },
+      ]
+      const aiTitle = await sendMessage(titlePrompt, selectedTextModel)
+      const cleaned = (aiTitle || "").replace(/["'`]/g, "").replace(/[\n\r]/g, " ").trim()
+      // Enforce single word: remove all non-alphanumeric characters
+      const singleWord = cleaned.replace(/[^A-Za-z0-9]+/g, "")
+      // Build a sane fallback as single word from the first user message
+      const tokens = (firstUserMessageText || "").match(/[A-Za-z0-9]+/g) || []
+      const fallbackSingle = tokens.length
+        ? tokens.slice(0, 2).map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join("")
+        : "NewChat"
+      const finalTitle = (singleWord || fallbackSingle).slice(0, 30)
+
+      // Only rename if still default name to avoid overriding user edits
+      const stillDefault = chatTabs.find((t) => t.id === activeChatId)?.name === "Chat"
+      if (!stillDefault) return
+      const updatedTabs: ChatTab[] = chatTabs.map((t) => (t.id === activeChatId ? { ...t, name: finalTitle } : t))
+      setChatTabs(updatedTabs)
+    } catch {
+      // Silently ignore title generation errors
     }
   }
 
@@ -515,7 +569,7 @@ export default function Chat({ isOpen, setIsOpen, activeChatId, onFork, chatTabs
         </Button>
         <h1 className="text-xl font-semibold">ArcGPT</h1>
         <div className="ml-auto flex items-center">
-          <Button variant="ghost" size="icon" onClick={clearChat} className="mr-2">
+          <Button variant="ghost" size="icon" onClick={() => setIsClearConfirmOpen(true)} className="mr-2">
             <Trash2 className="h-6 w-6" />
           </Button>
           <Button variant="ghost" size="icon" onClick={onFork} className="mr-2">
@@ -763,6 +817,41 @@ export default function Chat({ isOpen, setIsOpen, activeChatId, onFork, chatTabs
         chatTabs={chatTabs}
         setChatTabs={setChatTabs}
       />
+
+      {/* Clear Chat Confirm Dialog */}
+      <Dialog open={isClearConfirmOpen} onOpenChange={setIsClearConfirmOpen}>
+        <DialogContent className="sm:max-w-[460px] bg-zinc-950 border border-zinc-800">
+          <DialogHeader>
+            <div className="flex items-center gap-3">
+              <div>
+                <DialogTitle className="leading-tight">Clear this chat?</DialogTitle>
+                <DialogDescription className="mt-1">
+                  This will permanently remove all messages in the current chat. You cannot undo this action.
+                </DialogDescription>
+              </div>
+            </div>
+          </DialogHeader>
+
+          <div className="mt-3 rounded-lg border border-border/50 bg-muted/40 p-3 text-sm text-muted-foreground">
+            Tip: You can export your chats from Settings → Profile → Backup & Restore.
+          </div>
+
+          <DialogFooter className="mt-4">
+            <Button variant="outline" onClick={() => setIsClearConfirmOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                clearChat()
+                setIsClearConfirmOpen(false)
+              }}
+            >
+              Clear Chat
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
