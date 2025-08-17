@@ -5,38 +5,20 @@ import { motion } from 'framer-motion'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { IMAGE_MODELS, DEFAULT_TEXT_MODELS } from '@/components/settings'
+import { IMAGE_MODELS } from '@/components/settings'
 import { themes } from '@/lib/themes'
 import { useTheme } from '@/lib/theme-context'
 
-const steps = ['name', 'theme', 'systemPrompt', 'textModel', 'imageModel']
+const steps = ['name', 'theme', 'textModel', 'imageModel']
 
-const systemPromptOptions = [
-  {
-    name: "Default Assistant",
-    value: "You are an AI assistant named Arc. You help users with their queries. Respond to User only in Markdown."
-  },
-  {
-    name: "Creative Writer",
-    value: "You are a creative AI assistant named Arc. You excel at storytelling, creative writing, and imaginative content. Respond to User only in Markdown."
-  },
-  {
-    name: "Technical Expert",
-    value: "You are a technical AI assistant named Arc. You specialize in programming, mathematics, and technical explanations. Use code blocks and mathematical notation when appropriate. Respond to User only in Markdown."
-  },
-  {
-    name: "Custom",
-    value: ""
-  }
-]
+// System prompt selection was removed from onboarding. We keep a single default.
+const DEFAULT_SYSTEM_PROMPT =
+  "You are an AI assistant named Arc. You help users with their queries. Respond to User only in Markdown.";
 
 export function Onboarding({ onComplete }: { onComplete: () => void }) {
   const [step, setStep] = useState(0)
   const [name, setName] = useState('')
   const [selectedTheme, setSelectedTheme] = useState('default')
-  const [systemPrompt, setSystemPrompt] = useState(systemPromptOptions[0].value)
-  const [customSystemPrompt, setCustomSystemPrompt] = useState('')
   const [textModel, setTextModel] = useState('openai-fast')
   const [imageModel, setImageModel] = useState('')
   const [textModels, setTextModels] = useState<string[]>(["openai", "mistral", "gpt-5-nano"])
@@ -75,7 +57,7 @@ export function Onboarding({ onComplete }: { onComplete: () => void }) {
   }, []);
 
   const handleComplete = () => {
-    const finalSystemPrompt = systemPrompt === "" ? customSystemPrompt : systemPrompt;
+    const finalSystemPrompt = DEFAULT_SYSTEM_PROMPT;
     localStorage.setItem('profileName', name)
     localStorage.setItem('theme', selectedTheme)
     localStorage.setItem('systemPrompt', finalSystemPrompt)
@@ -94,20 +76,14 @@ export function Onboarding({ onComplete }: { onComplete: () => void }) {
     }
   }
 
-  const handleSystemPromptChange = (value: string) => {
-    setSystemPrompt(value)
-    if (value !== "") {
-      setCustomSystemPrompt('')
-    }
-  }
+  // System prompt selection removed; no-op handlers deleted
 
   const isStepValid = () => {
     switch (step) {
       case 0: return name.trim() !== ''
       case 1: return selectedTheme !== ''
-      case 2: return systemPrompt !== "" || customSystemPrompt.trim() !== ''
-      case 3: return textModel !== ''
-      case 4: return imageModel !== ''
+      case 2: return textModel !== ''
+      case 3: return imageModel !== ''
       default: return false
     }
   }
@@ -160,34 +136,6 @@ export function Onboarding({ onComplete }: { onComplete: () => void }) {
         )}
         {step === 2 && (
           <div className="space-y-4">
-            <Label className="text-white">Choose a System Prompt</Label>
-            <div className="space-y-2">
-              {systemPromptOptions.map((option) => (
-                <Button
-                  key={option.name}
-                  variant={systemPrompt === option.value ? "default" : "outline"}
-                  onClick={() => handleSystemPromptChange(option.value)}
-                  className="w-full justify-start"
-                >
-                  {option.name}
-                </Button>
-              ))}
-            </div>
-            {systemPrompt === "" && (
-              <div className="space-y-2">
-                <Label className="text-white">Custom System Prompt</Label>
-                <Textarea
-                  value={customSystemPrompt}
-                  onChange={(e) => setCustomSystemPrompt(e.target.value)}
-                  placeholder="Enter your custom system prompt..."
-                  className="bg-zinc-800 text-white min-h-[100px]"
-                />
-              </div>
-            )}
-          </div>
-        )}
-        {step === 3 && (
-          <div className="space-y-4">
             <Label className="text-white">Choose a Text Model</Label>
             <div className="flex flex-wrap gap-2">
               {isLoadingModels ? (
@@ -207,7 +155,7 @@ export function Onboarding({ onComplete }: { onComplete: () => void }) {
             </div>
           </div>
         )}
-        {step === 4 && (
+        {step === 3 && (
           <div className="space-y-4">
             <Label className="text-white">Choose an Image Model</Label>
             <div className="flex flex-wrap gap-2">
