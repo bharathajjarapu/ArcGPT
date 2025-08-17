@@ -46,6 +46,7 @@ type ChatProps = {
   onFork: () => void
   chatTabs: ChatTab[]
   setChatTabs: (chatTabs: ChatTab[]) => void
+  onNewChat: () => void
 }
 
 // Add a type for failed messages
@@ -60,7 +61,7 @@ interface FailedMessage {
   };
 }
 
-export default function Chat({ isOpen, setIsOpen, activeChatId, onFork, chatTabs, setChatTabs }: ChatProps) {
+export default function Chat({ isOpen, setIsOpen, activeChatId, onFork, chatTabs, setChatTabs, onNewChat }: ChatProps) {
   const [conversationHistory, setConversationHistory] = useState<Message[]>([])
   const [input, setInput] = useState("")
   const [isLoading, setIsLoading] = useState(false)
@@ -567,7 +568,18 @@ export default function Chat({ isOpen, setIsOpen, activeChatId, onFork, chatTabs
         >
           <SidebarIcon className="h-6 w-6" />
         </Button>
-        <h1 className="text-xl font-semibold">ArcGPT</h1>
+        <button
+          onClick={() => {
+            const hasNonSystemMessages = conversationHistory.some((m) => m.role !== "system")
+            if (hasNonSystemMessages) {
+              onNewChat()
+            }
+          }}
+          className="text-xl font-semibold select-none hover:opacity-90 active:opacity-80 transition-opacity"
+          title="New Chat"
+        >
+          ArcGPT
+        </button>
         <div className="ml-auto flex items-center">
           <Button variant="ghost" size="icon" onClick={() => setIsClearConfirmOpen(true)} className="mr-2">
             <Trash2 className="h-6 w-6" />
@@ -678,7 +690,7 @@ export default function Chat({ isOpen, setIsOpen, activeChatId, onFork, chatTabs
                       ) : (
                         <div className="p-4">
                           <MarkdownRenderer>{contentString}</MarkdownRenderer>
-                          {contentString.split(" ").length > 100 && (
+                          {contentString.split(" ").length > 100 && !/```[\s\S]*?```/.test(contentString) && (
                             <div className="absolute bottom-2 right-2 opacity-0 transition-opacity group-hover:opacity-100">
                               <CopyButton value={contentString} />
                             </div>

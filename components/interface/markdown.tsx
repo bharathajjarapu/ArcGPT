@@ -14,16 +14,96 @@ interface MarkdownRendererProps {
 }
 
 export function MarkdownRenderer({ children }: MarkdownRendererProps) {
+  const normalized = normalizeMathDelimiters(children)
   return (
     <Markdown
-      remarkPlugins={[remarkGfm, remarkMath]}
-      rehypePlugins={[rehypeKatex]}
+      remarkPlugins={[
+        remarkGfm,
+        [remarkMath, { singleDollarTextMath: true }] as any,
+      ]}
+      rehypePlugins={[[rehypeKatex, { strict: false, throwOnError: false, trust: true }] as any]}
       components={COMPONENTS}
       className="space-y-3"
     >
-      {children}
+      {normalized}
     </Markdown>
   )
+}
+
+function normalizeMathDelimiters(input: string): string {
+  // Split out fenced code blocks to avoid touching math-like text inside
+  const fencedSplit = input.split(/(```[\s\S]*?```)/g)
+  const processInline = (segment: string) => {
+    // Split out inline code as well
+    const inlineSplit = segment.split(/(`[^`]*`)/g)
+    return inlineSplit
+      .map((part) => {
+        if (part.startsWith("`") && part.endsWith("`")) return part
+        // Convert \[ ... \] (block math) → $$ ... $$
+        let replaced = part.replace(/\\\[([\s\S]*?)\\\]/g, (_m, p1) => `$$${p1}$$`)
+        // Convert \( ... \) (inline math) → $ ... $
+        replaced = replaced.replace(/\\\(([^]*?)\\\)/g, (_m, p1) => `$${p1}$`)
+        return replaced
+      })
+      .join("")
+  }
+  return fencedSplit
+    .map((seg) => (seg.startsWith("```") ? seg : processInline(seg)))
+    .join("")
+}
+
+function formatLanguageLabel(language: string): string {
+  const normalized = language.toLowerCase()
+  switch (normalized) {
+    case "ts":
+    case "typescript":
+      return "TypeScript"
+    case "tsx":
+      return "TSX"
+    case "js":
+    case "javascript":
+      return "JavaScript"
+    case "jsx":
+      return "JSX"
+    case "py":
+    case "python":
+      return "Python"
+    case "sh":
+    case "bash":
+    case "zsh":
+      return "Shell"
+    case "json":
+      return "JSON"
+    case "html":
+      return "HTML"
+    case "css":
+      return "CSS"
+    case "md":
+    case "markdown":
+      return "Markdown"
+    case "go":
+      return "Go"
+    case "java":
+      return "Java"
+    case "c":
+      return "C"
+    case "cpp":
+    case "c++":
+      return "C++"
+    case "rs":
+    case "rust":
+      return "Rust"
+    case "php":
+      return "PHP"
+    case "ruby":
+    case "rb":
+      return "Ruby"
+    case "yaml":
+    case "yml":
+      return "YAML"
+    default:
+      return language.toUpperCase()
+  }
 }
 
 interface HighlightedPre extends React.HTMLAttributes<HTMLPreElement> {
@@ -99,12 +179,19 @@ const CodeBlock = ({
       : childrenTakeAllStringContents(children)
 
   const preClass = cn(
-    "overflow-x-scroll rounded-md border bg-background/50 p-4 font-mono text-sm [scrollbar-width:none]",
+    "relative overflow-x-auto rounded-lg border border-foreground/20 bg-muted/40 p-4 pt-10 font-mono text-sm leading-relaxed shadow-sm transition-colors hover:border-foreground/30 [scrollbar-width:none] [&::-webkit-scrollbar]:h-2 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-foreground/10 hover:[&::-webkit-scrollbar-thumb]:bg-foreground/20 [&::-webkit-scrollbar-track]:bg-transparent",
     className
   )
 
   return (
     <div className="group/code relative mb-4">
+      {language && (
+        <div className="pointer-events-none absolute left-3 top-2">
+          <span className="rounded-md border border-foreground/10 bg-background/80 px-2 py-0.5 text-xs font-medium text-foreground/70 shadow-sm backdrop-blur-sm">
+            {formatLanguageLabel(language)}
+          </span>
+        </div>
+      )}
       <Suspense
         fallback={
           <pre className={preClass} {...restProps}>
@@ -118,7 +205,7 @@ const CodeBlock = ({
       </Suspense>
 
       <div className="invisible absolute right-2 top-2 flex space-x-1 rounded-lg p-1 opacity-0 transition-all duration-200 group-hover/code:visible group-hover/code:opacity-100">
-        <CopyButton content={code} copyMessage="Copied code to clipboard" />
+        <CopyButton value={code} copyMessage="Copied code to clipboard" />
       </div>
     </div>
   )
@@ -155,15 +242,25 @@ const MarkdownImage = ({ src, alt, ...props }: React.ImgHTMLAttributes<HTMLImage
         </span>
       )}
       
-      <Image
-        src={src || ''}
-        alt={alt || ''}
-        width={700}
-        height={400}
-        className="rounded-md"
-        onLoadingComplete={() => setIsLoading(false)}
-        {...props}
-      />
+      {(() => {
+        const { width: rawWidth, height: rawHeight, ...restImgProps } = props
+        const parsedWidth = typeof rawWidth === 'string' ? parseInt(rawWidth, 10) : rawWidth
+        const parsedHeight = typeof rawHeight === 'string' ? parseInt(rawHeight, 10) : rawHeight
+        const safeWidth = parsedWidth && !Number.isNaN(parsedWidth as number) ? (parsedWidth as number) : 700
+        const safeHeight = parsedHeight && !Number.isNaN(parsedHeight as number) ? (parsedHeight as number) : 400
+
+        return (
+          <Image
+            src={src || ''}
+            alt={alt || ''}
+            width={safeWidth}
+            height={safeHeight}
+            className="rounded-md"
+            onLoadingComplete={() => setIsLoading(false)}
+            {...restImgProps}
+          />
+        )
+      })()}
       
       <span className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
         <CopyButton
@@ -202,7 +299,7 @@ const COMPONENTS = {
     ) : (
       <code
         className={cn(
-          "font-mono [:not(pre)>&]:rounded-md [:not(pre)>&]:bg-background/50 [:not(pre)>&]:px-1 [:not(pre)>&]:py-0.5"
+          "font-mono text-[0.9em] [:not(pre)>&]:rounded-md [:not(pre)>&]:border [:not(pre)>&]:border-foreground/10 [:not(pre)>&]:bg-muted/40 [:not(pre)>&]:px-1.5 [:not(pre)>&]:py-0.5 [:not(pre)>&]:text-foreground/90"
         )}
         {...rest}
       >
@@ -229,27 +326,10 @@ const COMPONENTS = {
   tr: withClass("tr", "m-0 border-t p-0 even:bg-muted"),
   p: withClass("p", "whitespace-pre-wrap"),
   hr: withClass("hr", "border-foreground/20"),
-  img: (props) => <MarkdownImage {...props} />,
-  math: ({ value }: { value: string }) => (
-    <div className="my-6 text-center">
-      <Suspense fallback={<div>Loading math...</div>}>
-        <div 
-          className="katex-display"
-          dangerouslySetInnerHTML={{ __html: value }} 
-        />
-      </Suspense>
-    </div>
+  img: (props: React.ImgHTMLAttributes<HTMLImageElement>) => (
+    <MarkdownImage {...props} />
   ),
-  inlineMath: ({ value }: { value: string }) => (
-    <span className="inline-block align-middle">
-      <Suspense fallback={<span>Loading math...</span>}>
-        <span 
-          className="katex"
-          dangerouslySetInnerHTML={{ __html: value }} 
-        />
-      </Suspense>
-    </span>
-  ),
+  // Let rehype-katex render math; no custom components needed here
 }
 
 function withClass(Tag: keyof JSX.IntrinsicElements, classes: string) {

@@ -120,6 +120,7 @@ export default function Home() {
             onFork={forkChat}
             chatTabs={chatTabs}
             setChatTabs={setChatTabs}
+            onNewChat={addNewChat}
           />
         </>
       )}
