@@ -837,18 +837,18 @@ export default function Chat({ isOpen, setIsOpen, activeChatId, onFork, chatTabs
             <div className="flex items-center gap-3">
               <div>
                 <DialogTitle className="leading-tight">Clear this chat?</DialogTitle>
-                <DialogDescription className="mt-1">
+                <DialogDescription className="mt-3">
                   This will permanently remove all messages in the current chat. You cannot undo this action.
                 </DialogDescription>
               </div>
             </div>
           </DialogHeader>
 
-          <div className="mt-3 rounded-lg border border-border/50 bg-muted/40 p-3 text-sm text-muted-foreground">
+          <div className="mt-1 rounded-lg border border-border/50 bg-muted/40 p-3 text-sm text-muted-foreground">
             Tip: You can export your chats from Settings → Profile → Backup & Restore.
           </div>
 
-          <DialogFooter className="mt-4">
+          <DialogFooter className="mt-1">
             <Button variant="outline" onClick={() => setIsClearConfirmOpen(false)}>
               Cancel
             </Button>

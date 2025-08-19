@@ -272,7 +272,7 @@ export const Settings = ({
         <Tabs
           value={activeTab}
           onValueChange={setActiveTab}
-          className="w-full pt-5"
+          className="w-full"
         >
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="profile">Profile</TabsTrigger>
@@ -280,7 +280,7 @@ export const Settings = ({
             <TabsTrigger value="settings">Models</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="profile" className="mt-4">
+          <TabsContent value="profile" className="mt-1">
             <div className="grid gap-4 py-4">
               <div className="grid grid-cols-[auto,1fr] items-center gap-4">
                 <Label htmlFor="name">
@@ -353,7 +353,7 @@ export const Settings = ({
             </div>
           </TabsContent>
 
-          <TabsContent value="appearance" className="mt-4">
+          <TabsContent value="appearance" className="mt-1">
             <div className="grid gap-4 py-4">
               {/* Theme Selection */}
               <div className="flex flex-col gap-3">
@@ -381,7 +381,7 @@ export const Settings = ({
             </div>
           </TabsContent>
 
-          <TabsContent value="settings" className="mt-4">
+          <TabsContent value="settings" className="mt-1">
             <div className="grid gap-4 py-4">
               {/* Text Model field */}
               <div className="grid grid-cols-[auto,1fr] items-center gap-4">
