@@ -1,0 +1,25 @@
+@import 'katex/dist/katex.min.css';
+
+.katex-display {
+  overflow-x: auto;
+  overflow-y: hidden;
+  margin: 1em 0;
+}
+
+.katex {
+  color: inherit;
+}
+
+.katex-display .katex {
+  color: inherit;
+}
+
+/* Dark mode adjustments for KaTeX */
+.dark .katex {
+  color: #e5e7eb;
+}
+
+.dark .katex-display .katex {
+  color: #e5e7eb;
+}
+
