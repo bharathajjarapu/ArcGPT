@@ -8,6 +8,7 @@ import { Loader2 } from 'lucide-react'
 
 import { cn } from "@/lib/utils"
 import { CopyButton } from "./copy"
+import { ChartRenderer, parseChartConfig } from "./chart"
 
 interface MarkdownRendererProps {
   children: string
@@ -101,6 +102,8 @@ function formatLanguageLabel(language: string): string {
     case "yaml":
     case "yml":
       return "YAML"
+    case "chart":
+      return "Chart"
     default:
       return language.toUpperCase()
   }
@@ -177,6 +180,24 @@ const CodeBlock = ({
     typeof children === "string"
       ? children
       : childrenTakeAllStringContents(children)
+
+  // Check if this is a chart block
+  if (language === 'chart') {
+    const chartConfig = parseChartConfig(code)
+    if (chartConfig) {
+      return <ChartRenderer config={chartConfig} />
+    } else {
+      // If chart parsing fails, show error message
+      return (
+        <div className="my-4 p-4 border border-destructive/50 rounded-lg bg-destructive/10">
+          <p className="text-sm text-destructive-foreground font-medium">Invalid chart configuration</p>
+          <pre className="mt-2 text-xs text-muted-foreground overflow-x-auto">
+            {code}
+          </pre>
+        </div>
+      )
+    }
+  }
 
   const preClass = cn(
     "relative overflow-x-auto rounded-lg border border-foreground/20 bg-muted/40 p-4 pt-10 font-mono text-sm leading-relaxed shadow-sm transition-colors hover:border-foreground/30 [scrollbar-width:none] [&::-webkit-scrollbar]:h-2 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-foreground/10 hover:[&::-webkit-scrollbar-thumb]:bg-foreground/20 [&::-webkit-scrollbar-track]:bg-transparent",

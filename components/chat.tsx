@@ -28,6 +28,7 @@ import {
   RotateCcw,
   Upload,
   FileImage,
+  BarChart3,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { Message, ChatTab, MessageContent } from "@/types/chat"
@@ -203,6 +204,28 @@ export default function Chat({ isOpen, setIsOpen, activeChatId, onFork, chatTabs
       ![](https://pollinations.ai/p/<PROMPT>?width=1280&height=720&nologo=true&model=${selectedImageModel})
     - Replace <PROMPT> with the image description, URL-encoded.
 
+    For charts and data visualizations:
+    - ALWAYS create interactive charts using the special 'chart' code block format when users ask for charts or provide data
+    - NEVER just describe charts - ALWAYS generate the actual chart code block
+    - Supported chart types: 'bar', 'line', 'pie', 'area', 'scatter'
+    - MANDATORY format (copy this exactly):
+      \`\`\`chart
+      {
+        "type": "bar",
+        "title": "Your Chart Title",
+        "data": [
+          {"name": "Category1", "value": 100},
+          {"name": "Category2", "value": 200}
+        ]
+      }
+      \`\`\`
+    - CRITICAL: The code block MUST start with \`\`\`chart (not \`\`\`json or \`\`\`javascript)
+    - For multiple data series, use an array for yAxis: "yAxis": ["series1", "series2"]
+    - You can specify custom colors: "colors": ["#8884d8", "#82ca9d", "#ffc658"]
+    - When user asks for ANY chart or provides data, IMMEDIATELY generate the chart code block
+    - When user uses @chart prefix, focus EXCLUSIVELY on generating charts with minimal explanation
+    - For @chart requests, provide the chart code block first, then a brief one-line explanation
+
     Current time: ${formattedTime}
     Current date: ${formattedDate}
     
@@ -246,6 +269,8 @@ export default function Chat({ isOpen, setIsOpen, activeChatId, onFork, chatTabs
       return { prefix: "@code", model: "qwen-coder", icon: Code }
     } else if (content.startsWith("@imagine ")) {
       return { prefix: "@imagine", model: selectedImageModel, icon: ImageIcon }
+    } else if (content.startsWith("@chart ")) {
+      return { prefix: "@chart", model: selectedTextModel, icon: BarChart3 }
     }
     return { prefix: null, model: selectedTextModel, icon: null }
   }

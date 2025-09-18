@@ -6,8 +6,8 @@ const PROMPT_SUGGESTIONS = [
   "Make an Image of close-up portrait of Hacker",
   "Find the Integral & Derivative of sin(3x)dx",
   "Explain AI & Neural Networks with Math",
+  "@chart Bar chart on Population of India",
   "@code Write Fibonacci Series in Python",
-  "@code Write Code for Palindrome in Python",
   "@imagine Cinematic Shot of Skies of Pandora",
 ]
 type PromptSuggestion = {
