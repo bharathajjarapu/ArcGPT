@@ -40,11 +40,7 @@ export function ChatHeader({
         <SidebarIcon className="h-6 w-6" />
       </Button>
       <button
-        onClick={() => {
-          if (hasMessages) {
-            onNewChat()
-          }
-        }}
+        onClick={onNewChat}
         className="text-xl font-semibold select-none hover:opacity-90 active:opacity-80 transition-opacity"
         title="New Chat"
       >

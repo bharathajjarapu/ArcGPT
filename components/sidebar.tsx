@@ -35,10 +35,9 @@ export default function Sidebar({
   return (
     <div
       className={cn(
-        "h-full bg-zinc-950/20 backdrop-blur-md border-r border-border/30 overflow-hidden transition-[width] duration-400 ease-out flex flex-col",
-        isOpen ? "w-[200px]" : "w-0"
+        "h-full bg-zinc-950/20 backdrop-blur-md border-r border-border/30 overflow-hidden flex flex-col",
+        isOpen ? "sopen" : "sclosed"
       )}
-      style={{ minWidth: isOpen ? '200px' : '0px' }}
     >
       <div className="w-[200px] h-full flex flex-col">
         <div className="px-3 py-3">
@@ -60,8 +59,8 @@ export default function Sidebar({
               className={cn(
                 "group flex items-center justify-between rounded-lg px-2 py-2 text-sm transition-all duration-300 hover:bg-accent/20 cursor-pointer w-full h-10 border backdrop-blur-sm transform",
                 chat.id === activeChatId
-                  ? "bg-accent/30 border-accent/50 text-accent-foreground shadow-lg shadow-accent/20 ring-1 ring-accent/30 scale-[1.02]"
-                  : "border-border/30 bg-background/20 hover:border-accent/40 text-white hover:scale-[1.01]"
+                  ? "bg-accent/30 border-accent/50 text-accent-foreground shadow-lg shadow-accent/20 ring-1 ring-accent/30 scale-[1]"
+                  : "border-border/30 bg-background/20 hover:border-accent/40 text-white hover:scale-[1]"
               )}
               onClick={() => setActiveChatId(chat.id)}
             >
@@ -114,7 +113,18 @@ export default function Sidebar({
         </div>
       </ScrollArea>
       </div>
+      <style jsx global>{`
+        .sopen {
+          width: 200px;
+          min-width: 200px;
+          transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1), min-width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .sclosed {
+          width: 0px;
+          min-width: 0px;
+          transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1), min-width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+      `}</style>
     </div>
   )
 }
-

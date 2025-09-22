@@ -53,7 +53,7 @@ const Select = React.forwardRef<HTMLDivElement, SelectProps>(
 
     return (
       <SelectContext.Provider value={contextValue}>
-        <div ref={ref} {...props}>
+        <div ref={ref} className="relative" {...props}>
           {children}
         </div>
       </SelectContext.Provider>
@@ -96,7 +96,13 @@ const SelectValue = ({ placeholder }: { placeholder?: string }) => {
   const context = React.useContext(SelectContext)
   if (!context) throw new Error("SelectValue must be used within Select")
 
-  return <span>{placeholder || context.value}</span>
+  const [displayValue, setDisplayValue] = React.useState(context.value || placeholder || 'Select...')
+
+  React.useEffect(() => {
+    setDisplayValue(context.value || placeholder || 'Select...')
+  }, [context.value, placeholder])
+
+  return <span>{displayValue}</span>
 }
 
 const SelectContent = React.forwardRef<HTMLDivElement, SelectContentProps>(
@@ -110,7 +116,7 @@ const SelectContent = React.forwardRef<HTMLDivElement, SelectContentProps>(
       <div
         ref={ref}
         className={cn(
-          "absolute z-50 mt-1 max-h-60 w-full min-w-[8rem] overflow-auto rounded-md border border-border bg-popover p-1 text-popover-foreground shadow-md",
+          "absolute left-0 top-full z-50 mt-1 max-h-60 w-full min-w-[8rem] overflow-auto rounded-md border border-border bg-popover p-1 text-popover-foreground shadow-md",
           className
         )}
         {...props}

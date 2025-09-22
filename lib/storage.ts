@@ -18,6 +18,26 @@ export const debouncedSetItem = (key: string, value: string) => {
   storageQueue.set(key, { value, timeoutId })
 }
 
+// Force immediate write and clear debounce queue for a specific key
+export const flushDebouncedItem = (key: string) => {
+  const existing = storageQueue.get(key)
+  if (existing) {
+    clearTimeout(existing.timeoutId)
+    localStorage.setItem(key, existing.value)
+    storageQueue.delete(key)
+  }
+}
+
+// Clear all pending debounced writes for keys matching a pattern
+export const clearDebouncedPattern = (pattern: string) => {
+  storageQueue.forEach((item, key) => {
+    if (key.includes(pattern)) {
+      clearTimeout(item.timeoutId)
+      storageQueue.delete(key)
+    }
+  })
+}
+
 export const debouncedGetItem = (key: string): string | null => {
   return localStorage.getItem(key)
 }

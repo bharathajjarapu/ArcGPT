@@ -65,6 +65,7 @@ export default function Home() {
     setChatTabs(updatedChatTabs)
     setActiveChatId(newChat.id)
     localStorage.setItem('chatTabs', JSON.stringify(updatedChatTabs))
+    localStorage.setItem('activeChatId', newChat.id)
   }
 
   const editChatName = (id: string, newName: string) => {

@@ -19,7 +19,7 @@ import { Settings } from "./settings"
 import { ChatHeader } from "./chat/header"
 import { MessageList } from "./chat/messages"
 import { InputArea } from "./chat/inputbar"
-import { debouncedSetItem, batchSetItem } from "@/lib/storage"
+import { debouncedSetItem, batchSetItem, flushDebouncedItem, clearDebouncedPattern } from "@/lib/storage"
 import { Search, Code, ImageIcon, BarChart3 } from "lucide-react"
 
 type ChatProps = {
@@ -168,8 +168,22 @@ export default function Chat({ isOpen, setIsOpen, activeChatId, onFork, chatTabs
     return baseSystemPrompt
   }, [isInitialized, selectedImageModel])
 
+  // Store previous chat ID to handle cleanup
+  const prevActiveChatIdRef = useRef<string>('')
+
   useEffect(() => {
     if (!isInitialized || !systemPromptMemo) return
+
+    // Save previous chat immediately before switching (if there was a previous chat)
+    if (prevActiveChatIdRef.current && prevActiveChatIdRef.current !== activeChatId && conversationHistory.length > 0) {
+      flushDebouncedItem(`chat_${prevActiveChatIdRef.current}`)
+    }
+
+    // Clear any remaining chat-related debounced writes to prevent cross-contamination
+    clearDebouncedPattern('chat_')
+
+    // Update the previous chat ID reference
+    prevActiveChatIdRef.current = activeChatId
 
     const systemMessage: Message = {
       id: "init",
@@ -188,8 +202,14 @@ export default function Chat({ isOpen, setIsOpen, activeChatId, onFork, chatTabs
         setConversationHistory([systemMessage])
       }
     } else {
+      // For new chats, always start with just the system message
       setConversationHistory([systemMessage])
     }
+
+    // Clear any selected images and input when switching chats
+    setSelectedImages([])
+    setInput("")
+    setFailedMessage(null)
   }, [activeChatId, systemPromptMemo, isInitialized])
 
   // Use debounced localStorage for conversation history
@@ -494,14 +514,11 @@ export default function Chat({ isOpen, setIsOpen, activeChatId, onFork, chatTabs
         />
       </div>
 
-      {/* Main Content Area with Floating Input */}
       <div className="flex-1 flex flex-col min-h-0 relative">
-        {/* Chat Content */}
         <div className="flex-1 min-h-0">
           {!hasUserMessages ? (
-            /* Homepage/Empty state - no scroll area, centered content */
             <div className="h-full flex items-center justify-center p-4">
-              <div className="max-w-4xl mx-auto w-full text-center">
+              <div className="max-w-4xl mx-auto w-full flex items-center justify-center h-full pb-6 sm:pb-12 md:pb-16 lg:pb-20 xl:pb-24">
                 <PromptSuggestions greeting={greeting} onSelect={handlePromptSelect} />
               </div>
                 </div>
