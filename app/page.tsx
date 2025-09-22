@@ -18,9 +18,7 @@ export default function Home() {
 
   useEffect(() => {
     setHydrated(true)
-  }, [])
 
-  useEffect(() => {
     const savedChatTabs = localStorage.getItem('chatTabs')
     if (savedChatTabs) {
       setChatTabs(JSON.parse(savedChatTabs))
@@ -34,9 +32,29 @@ export default function Home() {
     }
   }, [])
 
+  // Restore active chat ID after chatTabs are loaded
+  useEffect(() => {
+    if (chatTabs.length > 0) {
+      const savedActiveChatId = localStorage.getItem('activeChatId')
+      if (savedActiveChatId && chatTabs.some(chat => chat.id === savedActiveChatId)) {
+        setActiveChatId(savedActiveChatId)
+      } else if (!savedActiveChatId) {
+        // If no saved active chat ID, default to the first chat
+        setActiveChatId(chatTabs[0].id)
+      }
+    }
+  }, [chatTabs])
+
   useEffect(() => {
     localStorage.setItem('chatTabs', JSON.stringify(chatTabs))
   }, [chatTabs])
+
+  // Save active chat ID to localStorage whenever it changes
+  useEffect(() => {
+    if (activeChatId) {
+      localStorage.setItem('activeChatId', activeChatId)
+    }
+  }, [activeChatId])
 
   const addNewChat = () => {
     const newChat: ChatTab = {
@@ -62,8 +80,17 @@ export default function Home() {
     setChatTabs(updatedChatTabs)
     localStorage.setItem('chatTabs', JSON.stringify(updatedChatTabs))
     localStorage.removeItem(`chat_${id}`)
+
+    // Handle active chat ID update
     if (activeChatId === id) {
-      setActiveChatId(updatedChatTabs[0]?.id || '')
+      const newActiveId = updatedChatTabs[0]?.id || ''
+      setActiveChatId(newActiveId)
+      // Also update localStorage to persist the active chat ID
+      if (newActiveId) {
+        localStorage.setItem('activeChatId', newActiveId)
+      } else {
+        localStorage.removeItem('activeChatId')
+      }
     }
   }
 
@@ -88,6 +115,7 @@ export default function Home() {
     }
 
     localStorage.setItem('chatTabs', JSON.stringify(updatedChatTabs));
+    localStorage.setItem('activeChatId', newChatId);
   };
 
   const handleOnboardingComplete = () => {

@@ -490,6 +490,7 @@ export default function Chat({ isOpen, setIsOpen, activeChatId, onFork, chatTabs
           onFork={onFork}
           onSettingsOpen={() => setIsSettingsOpen(true)}
           hasMessages={hasMessages}
+          activeChatName={chatTabs.find(chat => chat.id === activeChatId)?.name || 'ArcGPT'}
         />
       </div>
 

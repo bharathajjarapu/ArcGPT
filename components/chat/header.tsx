@@ -16,6 +16,7 @@ type ChatHeaderProps = {
   onFork: () => void
   onSettingsOpen: () => void
   hasMessages: boolean
+  activeChatName: string
 }
 
 export function ChatHeader({
@@ -25,7 +26,8 @@ export function ChatHeader({
   onClearChat,
   onFork,
   onSettingsOpen,
-  hasMessages
+  hasMessages,
+  activeChatName
 }: ChatHeaderProps) {
   return (
     <header className="flex items-center pt-3 pb-0.8 px-3">
@@ -46,7 +48,7 @@ export function ChatHeader({
         className="text-xl font-semibold select-none hover:opacity-90 active:opacity-80 transition-opacity"
         title="New Chat"
       >
-        ArcGPT
+        {activeChatName === 'Chat' ? 'ArcGPT' : activeChatName}
       </button>
       <div className="ml-auto flex items-center">
         <Button variant="ghost" size="icon" onClick={onClearChat} className="mr-2">

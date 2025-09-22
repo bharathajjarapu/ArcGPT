@@ -37,7 +37,7 @@ export function MessageList({
   return (
     <div className="space-y-6">
         {conversationHistory
-          .filter((message) => message.role !== "system")
+          .filter((message) => message.role !== "system" && message.content)
           .map((message, idx) => {
             const contentString = getContentAsString(message.content)
             const { icon: AgentIcon } = getAgentDetails(contentString)

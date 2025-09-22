@@ -42,7 +42,7 @@ const AnimatedGridBackground = () => {
           }
         `
       }} />
-      <div className="absolute w-screen h-screen flex justify-center items-center gap-[2px] flex-wrap overflow-hidden bg-background">
+      <div className="absolute w-screen h-screen flex justify-center items-center gap-[2px] flex-wrap overflow-hidden bg-background/20 backdrop-blur-sm">
         <div 
           className="grid-overlay absolute w-full h-full z-[1]"
           style={{
@@ -142,7 +142,7 @@ export function Onboarding({ onComplete }: { onComplete: () => void }) {
       <AnimatedGridBackground />
       
       {/* Main Content */}
-      <div className="relative z-[1000] bg-card/90 backdrop-blur-sm p-8 rounded-lg shadow-2xl max-w-md w-full border border-border/20">
+      <div className="relative z-[1000] bg-card/20 backdrop-blur-md p-8 rounded-lg shadow-2xl max-w-md w-full border border-border/30">
         <h2 className="text-2xl font-bold mb-4 text-primary">ArcGPT</h2>
         {step === 0 && (
           <div className="space-y-4">
@@ -152,7 +152,7 @@ export function Onboarding({ onComplete }: { onComplete: () => void }) {
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Enter your name"
-              className="bg-input border-border text-foreground"
+              className="bg-input/20 backdrop-blur-sm border-border/30 text-foreground"
             />
           </div>
         )}
@@ -210,7 +210,7 @@ export function Onboarding({ onComplete }: { onComplete: () => void }) {
                   key={model}
                   variant={imageModel === model ? "default" : "outline"}
                   onClick={() => setImageModel(model)}
-                  className="rounded-md"
+                  className="rounded-md bg-background/20 backdrop-blur-sm border-border/30 hover:bg-background/30"
                 >
                   {model}
                 </Button>
@@ -220,7 +220,7 @@ export function Onboarding({ onComplete }: { onComplete: () => void }) {
         )}
         <Button
           onClick={handleNext}
-          className="mt-6 w-full"
+          className="mt-6 w-full bg-background/20 backdrop-blur-sm border-border/30 hover:bg-background/30"
           disabled={!isStepValid()}
         >
           {step < steps.length - 1 ? 'Next' : 'Get Started'}

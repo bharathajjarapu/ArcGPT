@@ -24,10 +24,10 @@ const showToast = (message: string, type: 'success' | 'error' = 'success') => {
 
   const toast = document.createElement('div');
   toast.className = `
-    px-4 py-2 rounded-lg border shadow-lg font-medium text-sm
+    px-4 py-2 rounded-lg border shadow-lg font-medium text-sm backdrop-blur-md
     ${type === 'success'
-      ? 'bg-green-600 text-white border-green-700'
-      : 'bg-red-600 text-white border-red-700'
+      ? 'bg-green-600/20 text-green-100 border-green-500/30'
+      : 'bg-red-600/20 text-red-100 border-red-500/30'
     }
   `;
 
