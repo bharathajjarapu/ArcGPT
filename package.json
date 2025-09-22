@@ -9,7 +9,6 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "autoprefixer": "^10.4.20",
     "lucide-react": "^0.454.0",
     "next": "14.2.16",
     "next-themes": "^0.4.4",
@@ -19,8 +18,7 @@
     "recharts": "2.15.0",
     "rehype-katex": "latest",
     "remark-gfm": "latest",
-    "remark-math": "latest",
-    "tailwindcss-animate": "^1.0.7"
+    "remark-math": "latest"
   },
   "devDependencies": {
     "@types/node": "^22",

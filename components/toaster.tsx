@@ -24,7 +24,7 @@ const showToast = (message: string, type: 'success' | 'error' = 'success') => {
 
   const toast = document.createElement('div');
   toast.className = `
-    px-4 py-2 rounded-lg border shadow-lg font-medium text-sm animate-in slide-in-from-right-2
+    px-4 py-2 rounded-lg border shadow-lg font-medium text-sm
     ${type === 'success'
       ? 'bg-green-600 text-white border-green-700'
       : 'bg-red-600 text-white border-red-700'
