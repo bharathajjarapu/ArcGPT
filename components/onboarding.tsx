@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { IMAGE_MODELS } from '@/components/settings'
 import { themes } from '@/lib/themes'
-import { useTheme } from '@/lib/theme-context'
+import { useTheme } from '@/lib/themer'
 
 // Animated Grid Background Component
 const AnimatedGridBackground = () => {

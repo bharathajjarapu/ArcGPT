@@ -1,6 +1,6 @@
 import './globals.css'
 import '../styles/katex.css'
-import { ThemeProvider } from '@/lib/theme-context'
+import { ThemeProvider } from '@/lib/themer'
 import { AppToaster } from '@/components/toaster'
 
 export const metadata = {

@@ -20,7 +20,7 @@ import {
   ResponsiveContainer,
   Cell,
 } from 'recharts'
-import { useTheme } from '../../lib/theme-context'
+import { useTheme } from '../../lib/themer'
 
 // Define chart configuration types
 interface ChartConfig {

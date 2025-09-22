@@ -22,7 +22,7 @@ import { Download, Upload, AlertCircle, Moon, Sun } from "lucide-react";
 import { ChatTab } from '@/types/chat';
 import { Textarea } from "@/components/ui/textarea";
 import { themes } from '@/lib/themes';
-import { useTheme } from '@/lib/theme-context';
+import { useTheme } from '@/lib/themer';
 
 export const IMAGE_MODELS = [
   "flux",

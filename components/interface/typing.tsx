@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils"
 
 export function TypingIndicator() {
   return (
-    <div className="flex items-center space-x-2 p-2 bg-muted rounded-lg border border-border/50">
+    <div className="flex items-center space-x-2 p-2 bg-muted/20 backdrop-blur-md rounded-lg border border-border/30">
       <div className="typing-indicator">
         <span></span>
         <span></span>

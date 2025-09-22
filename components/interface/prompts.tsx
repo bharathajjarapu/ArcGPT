@@ -40,7 +40,7 @@ export function PromptSuggestions({ greeting, onSelect }: {
           <button
             key={index}
             onClick={() => onSelect(suggestion)}
-            className="h-max flex-1 rounded-xl border bg-background p-4 hover:bg-muted border-border/50 text-foreground"
+            className="h-max flex-1 rounded-xl border bg-background/20 backdrop-blur-md p-4 hover:bg-muted/20 border-border/30 text-foreground transition-all duration-200"
           >
             {suggestion}
           </button>

@@ -398,12 +398,50 @@ export const getTheme = (themeName: string): Theme => {
   return themes.find(theme => theme.name === themeName) || themes[0];
 };
 
+// Optimized theme application with batch updates
 export const applyTheme = (themeName: string, isDark: boolean = true) => {
   const theme = getTheme(themeName);
   const colors = isDark ? theme.colors.dark : theme.colors.light;
-  
+
   const root = document.documentElement;
+
+  // Use requestAnimationFrame for better performance
+  requestAnimationFrame(() => {
+    // Batch all CSS variable updates
+    const cssText = Object.entries(colors)
+      .map(([property, value]) => `${property}: ${value}`)
+      .join('; ');
+
+    // Apply all variables at once
+    root.style.cssText = root.style.cssText + cssText;
+  });
+};
+
+// Pre-computed theme cache for better performance
+const themeCache = new Map<string, Record<string, string>>();
+
+export const getCachedTheme = (themeName: string, isDark: boolean = true): Record<string, string> => {
+  const cacheKey = `${themeName}-${isDark ? 'dark' : 'light'}`;
+
+  if (!themeCache.has(cacheKey)) {
+    const theme = getTheme(themeName);
+    const colors = isDark ? theme.colors.dark : theme.colors.light;
+    themeCache.set(cacheKey, colors);
+  }
+
+  return themeCache.get(cacheKey)!;
+};
+
+// Optimized theme switching with minimal DOM updates
+export const switchTheme = (themeName: string, isDark: boolean = true) => {
+  const colors = getCachedTheme(themeName, isDark);
+  const root = document.documentElement;
+
+  // Only update changed properties
   Object.entries(colors).forEach(([property, value]) => {
-    root.style.setProperty(property, value);
+    const currentValue = root.style.getPropertyValue(property);
+    if (currentValue !== value) {
+      root.style.setProperty(property, value);
+    }
   });
 }; 
