@@ -40,24 +40,38 @@ export async function sendMessage(messages: Message[], textModel: string = "open
       }
     });
 
-    const response = await fetch('https://text.pollinations.ai/openai', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: textModel,
-        messages: openAIMessages,
-        max_tokens: 300,
-      }),
-    });
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+    try {
+      const response = await fetch('https://text.pollinations.ai/openai', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: textModel,
+          messages: openAIMessages,
+          max_tokens: 300,
+        }),
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      return data.choices[0]?.message?.content || null;
+    } catch (error: any) {
+      clearTimeout(timeoutId);
+      if (error.name === 'AbortError') {
+        throw new Error('Request timeout - please try again');
+      }
+      throw error;
     }
-
-    const data = await response.json();
-    return data.choices[0]?.message?.content || null;
   } catch (error) {
     console.error('Error:', error);
     return null;

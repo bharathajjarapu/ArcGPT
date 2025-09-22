@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useEffect } from 'react'
-import { motion } from 'framer-motion'
 import Sidebar from '@/components/sidebar'
 import Chat from '@/components/chat'
 import { Onboarding } from '@/components/onboarding'
@@ -9,12 +8,17 @@ import { ChatTab } from '@/types/chat'
 
 export default function Home() {
   const [isOpen, setIsOpen] = useState(false)
+  const [hydrated, setHydrated] = useState(false)
   const [chatTabs, setChatTabs] = useState<ChatTab[]>([
     { id: '1', name: 'Chat' }
   ])
   const [activeChatId, setActiveChatId] = useState('1')
   const [showOnboarding, setShowOnboarding] = useState(false)
   const [showContent, setShowContent] = useState(false)
+
+  useEffect(() => {
+    setHydrated(true)
+  }, [])
 
   useEffect(() => {
     const savedChatTabs = localStorage.getItem('chatTabs')
@@ -91,16 +95,17 @@ export default function Home() {
     setShowContent(true)
   }
 
+  if (!hydrated) {
+    return null
+  }
+
   if (showOnboarding) {
     return <Onboarding onComplete={handleOnboardingComplete} />
   }
 
   return (
-    <motion.div
-      className="flex h-screen bg-black"
-      initial={{ opacity: 0, scale: 0.9 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ duration: 0.5, ease: "easeOut" }}
+    <div
+      className="flex h-screen bg-black animate-scaleIn"
     >
       {showContent && (
         <>
@@ -124,6 +129,6 @@ export default function Home() {
           />
         </>
       )}
-    </motion.div>
+    </div>
   )
 }

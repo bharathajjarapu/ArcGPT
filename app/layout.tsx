@@ -1,10 +1,7 @@
 import './globals.css'
 import '../styles/katex.css'
-import { Inter } from 'next/font/google'
 import { ThemeProvider } from '@/lib/theme-context'
 import { AppToaster } from '@/components/toaster'
-
-const inter = Inter({ subsets: ['latin'] })
 
 export const metadata = {
   title: 'ArcGPT',
@@ -23,7 +20,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={`${inter.className} bg-background text-foreground`}>
+      <body className={`font-sans bg-background text-foreground`}>
         <ThemeProvider>
           {children}
           <AppToaster />

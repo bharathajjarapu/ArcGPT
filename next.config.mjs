@@ -17,13 +17,12 @@ const nextConfig = {
     unoptimized: true,
   },
   experimental: {
-    webpackBuildWorker: true,
-    parallelServerBuildTraces: true,
-    parallelServerCompiles: true,
     serverActions: {
       bodySizeLimit: '10mb'
     }
   },
+  // Disable font optimization to avoid fetch-related errors
+  optimizeFonts: false,
 }
 
 mergeConfig(nextConfig, userConfig)

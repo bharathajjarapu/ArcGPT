@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useEffect } from 'react'
-import { motion } from 'framer-motion'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -80,27 +79,27 @@ export function Onboarding({ onComplete }: { onComplete: () => void }) {
   }, [selectedTheme, setTheme]);
 
   useEffect(() => {
+    let cancelled = false
     const fetchModels = async () => {
       setIsLoadingModels(true);
       try {
-        const response = await fetch('/api/models');
-        if (response.ok) {
-          const data = await response.json();
-          if (data && Array.isArray(data)) {
-            // Always show all requested models regardless of API response
-            const requestedModels = ["openai", "mistral", "gpt-5-nano"];
-            setTextModels(requestedModels);
-          }
+        const response = await fetch('/api/models', { cache: 'no-store' });
+        if (!cancelled && response.ok) {
+          // We always show a curated list; API is only used as a liveness check
+          const requestedModels = ["openai", "mistral", "gpt-5-nano"];
+          setTextModels(requestedModels);
         }
       } catch (error) {
-        console.error('Error fetching models:', error);
-        // Keep default models as fallback
+        if (!cancelled) {
+          console.error('Error fetching models:', error);
+        }
       } finally {
-        setIsLoadingModels(false);
+        if (!cancelled) setIsLoadingModels(false);
       }
     };
 
     fetchModels();
+    return () => { cancelled = true }
   }, []);
 
   const handleComplete = () => {
@@ -136,12 +135,8 @@ export function Onboarding({ onComplete }: { onComplete: () => void }) {
   }
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -20 }}
-      transition={{ duration: 0.5 }}
-      className="fixed inset-0 z-50 flex items-center justify-center"
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center animate-fadeIn"
     >
       {/* Animated Grid Background */}
       <AnimatedGridBackground />
@@ -231,7 +226,7 @@ export function Onboarding({ onComplete }: { onComplete: () => void }) {
           {step < steps.length - 1 ? 'Next' : 'Get Started'}
         </Button>
       </div>
-    </motion.div>
+    </div>
   )
 }
 
