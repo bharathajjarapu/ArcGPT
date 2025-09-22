@@ -1,43 +1,73 @@
 "use client";
 
-import { Toaster } from 'sonner';
-import { useTheme } from '@/lib/theme-context';
 import { useEffect, useState } from 'react';
+
+// Simple toast system
+let toastContainer: HTMLDivElement | null = null;
+
+const createToastContainer = () => {
+  if (typeof window === 'undefined') return null;
+
+  if (!toastContainer) {
+    toastContainer = document.createElement('div');
+    toastContainer.className = 'fixed bottom-4 right-4 z-50 space-y-2';
+    document.body.appendChild(toastContainer);
+  }
+  return toastContainer;
+};
+
+const showToast = (message: string, type: 'success' | 'error' = 'success') => {
+  if (typeof window === 'undefined') return;
+
+  const container = createToastContainer();
+  if (!container) return;
+
+  const toast = document.createElement('div');
+  toast.className = `
+    px-4 py-2 rounded-lg border shadow-lg font-medium text-sm animate-in slide-in-from-right-2
+    ${type === 'success'
+      ? 'bg-green-600 text-white border-green-700'
+      : 'bg-red-600 text-white border-red-700'
+    }
+  `;
+
+  toast.textContent = message;
+
+  container.appendChild(toast);
+
+  // Auto remove after 3 seconds
+  setTimeout(() => {
+    if (toast.parentNode) {
+      toast.parentNode.removeChild(toast);
+    }
+  }, 3000);
+};
 
 export function AppToaster() {
   const [mounted, setMounted] = useState(false);
-  
+
   useEffect(() => {
     setMounted(true);
+
+    // Make showToast available globally for use in other components
+    (window as any).showToast = showToast;
+
+    return () => {
+      if (toastContainer && toastContainer.parentNode) {
+        toastContainer.parentNode.removeChild(toastContainer);
+        toastContainer = null;
+      }
+      delete (window as any).showToast;
+    };
   }, []);
 
-  // Don't render until mounted to avoid hydration issues
+  // Don't render anything - this is just a setup component
   if (!mounted) {
     return null;
   }
 
-  // Use try-catch to handle theme context issues gracefully
-  let isDark = true; // default to dark
-  try {
-    const themeContext = useTheme();
-    isDark = themeContext.isDark;
-  } catch (error) {
-    // Fallback if theme context is not available
-    console.warn('Theme context not available, using default dark theme');
-  }
-  
-  return (
-    <Toaster 
-      position="bottom-right"
-      theme={isDark ? 'dark' : 'light'}
-      toastOptions={{
-        className: 'rounded-xl border border-zinc-800 dark:border-zinc-700 bg-zinc-950 dark:bg-zinc-900 text-white dark:text-zinc-100 shadow-lg font-medium',
-        style: {
-          fontFamily: 'inherit',
-          fontSize: '0.875rem',
-        },
-        closeButton: true,
-      }}
-    />
-  );
-} 
+  return null;
+}
+
+// Export showToast for use in other components
+export { showToast }; 

@@ -10,7 +10,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { toast } from "sonner";
+// Toast functionality is now handled by the global showToast function
 import {
   Select,
   SelectContent,
@@ -141,7 +141,9 @@ export const Settings = ({
     localStorage.setItem("systemPrompt", localSystemPrompt);
     localStorage.setItem("textModel", localTextModel || "openai");
     localStorage.setItem("imageModel", localImageModel);
-    toast.success("Settings saved successfully.");
+    if (typeof window !== 'undefined' && (window as any).showToast) {
+      (window as any).showToast("Settings saved successfully.", "success");
+    }
     setIsOpen(false);
   };
 
@@ -197,10 +199,14 @@ export const Settings = ({
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
       
-      toast.success("Chats exported successfully!");
+      if (typeof window !== 'undefined' && (window as any).showToast) {
+        (window as any).showToast("Chats exported successfully!", "success");
+      }
     } catch (error) {
       console.error('Export error:', error);
-      toast.error("Failed to export chats. Please try again.");
+      if (typeof window !== 'undefined' && (window as any).showToast) {
+        (window as any).showToast("Failed to export chats. Please try again.", "error");
+      }
     }
   };
 
@@ -246,14 +252,18 @@ export const Settings = ({
         });
 
         setImportError(null);
-        toast.success("Chats imported successfully!");
+        if (typeof window !== 'undefined' && (window as any).showToast) {
+          (window as any).showToast("Chats imported successfully!", "success");
+        }
         
         // Close the settings dialog
         setIsOpen(false);
       } catch (error) {
         console.error('Import error:', error);
         setImportError(error instanceof Error ? error.message : "Failed to import chats. Please try again.");
-        toast.error("Failed to import chats. Please check the file format.");
+        if (typeof window !== 'undefined' && (window as any).showToast) {
+          (window as any).showToast("Failed to import chats. Please check the file format.", "error");
+        }
       }
     };
     reader.readAsText(file);
