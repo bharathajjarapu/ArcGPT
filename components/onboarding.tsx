@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { IMAGE_MODELS } from '@/components/settings'
+import { IMAGE_MODELS, TEXT_MODELS } from '@/components/settings'
 import { themes } from '@/lib/themes'
 import { useTheme } from '@/lib/themer'
 
@@ -65,9 +65,9 @@ export function Onboarding({ onComplete }: { onComplete: () => void }) {
   const [step, setStep] = useState(0)
   const [name, setName] = useState('')
   const [selectedTheme, setSelectedTheme] = useState('default')
-  const [textModel, setTextModel] = useState('openai-fast')
+  const [textModel, setTextModel] = useState('openai/gpt-oss-20b:free')
   const [imageModel, setImageModel] = useState('')
-  const [textModels, setTextModels] = useState<string[]>(["openai", "mistral", "gpt-5-nano"])
+  const [textModels, setTextModels] = useState<string[]>(TEXT_MODELS)
   const [isLoadingModels, setIsLoadingModels] = useState(false)
   const { setTheme } = useTheme()
 
@@ -78,28 +78,10 @@ export function Onboarding({ onComplete }: { onComplete: () => void }) {
     }
   }, [selectedTheme, setTheme]);
 
+  // Initialize with fixed models - no need to fetch from API
   useEffect(() => {
-    let cancelled = false
-    const fetchModels = async () => {
-      setIsLoadingModels(true);
-      try {
-        const response = await fetch('/api/models', { cache: 'no-store' });
-        if (!cancelled && response.ok) {
-          // We always show a curated list; API is only used as a liveness check
-          const requestedModels = ["openai", "mistral", "gpt-5-nano"];
-          setTextModels(requestedModels);
-        }
-      } catch (error) {
-        if (!cancelled) {
-          console.error('Error fetching models:', error);
-        }
-      } finally {
-        if (!cancelled) setIsLoadingModels(false);
-      }
-    };
-
-    fetchModels();
-    return () => { cancelled = true }
+    setTextModels(TEXT_MODELS);
+    setIsLoadingModels(false);
   }, []);
 
   const handleComplete = () => {
@@ -107,7 +89,7 @@ export function Onboarding({ onComplete }: { onComplete: () => void }) {
     localStorage.setItem('profileName', name)
     localStorage.setItem('theme', selectedTheme)
     localStorage.setItem('systemPrompt', finalSystemPrompt)
-    localStorage.setItem('textModel', textModel || 'openai')
+    localStorage.setItem('textModel', textModel || 'openai/gpt-oss-20b:free')
     localStorage.setItem('imageModel', imageModel)
     localStorage.setItem('onboardingComplete', 'true')
     setTheme(selectedTheme)

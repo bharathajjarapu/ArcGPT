@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dialog"
 import { cn } from "@/lib/utils"
 import type { Message, ChatTab, MessageContent } from "@/types/chat"
-import { sendMessage } from "@/app/chat"
+import { sendMessage } from "@/app/api/chat"
 import { PromptSuggestions } from "@/components/interface/prompts"
 import { getCurrentTimeAndDate } from "@/app/time"
 import { Settings } from "./settings"
@@ -51,23 +51,27 @@ export default function Chat({ isOpen, setIsOpen, activeChatId, onFork, chatTabs
   const [greeting, setGreeting] = useState("")
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [systemPrompt, setSystemPrompt] = useState("")
-  const [selectedTextModel, setSelectedTextModel] = useState("openai")
+  const [selectedTextModel, setSelectedTextModel] = useState("openai/gpt-oss-20b:free")
   const [selectedImageModel, setSelectedImageModel] = useState("flux")
+  const [titleGenerationModel] = useState("qwen/qwen3-4b:free")
   const [selectedImages, setSelectedImages] = useState<Array<{id: string, url: string, name: string}>>([])
   const [isInitialized, setIsInitialized] = useState(false)
   const [failedMessage, setFailedMessage] = useState<FailedMessage | null>(null)
   const [isDragOver, setIsDragOver] = useState(false)
   const [isListening, setIsListening] = useState(false)
   const [isClearConfirmOpen, setIsClearConfirmOpen] = useState(false)
+  const [openRouterKey, setOpenRouterKey] = useState("")
 
   // Initialize from localStorage after component mounts to prevent hydration issues
   useEffect(() => {
     const initializeFromStorage = () => {
       const savedTextModel = localStorage.getItem("textModel")
       const savedImageModel = localStorage.getItem("imageModel")
+      const savedOpenRouterKey = localStorage.getItem("openRouterKey")
       
       if (savedTextModel) setSelectedTextModel(savedTextModel)
       if (savedImageModel) setSelectedImageModel(savedImageModel)
+      if (savedOpenRouterKey) setOpenRouterKey(savedOpenRouterKey)
       
       setIsInitialized(true)
     }
@@ -103,9 +107,9 @@ export default function Chat({ isOpen, setIsOpen, activeChatId, onFork, chatTabs
 
   const getAgentDetails = useCallback((content: string) => {
     if (content.startsWith("@search ")) {
-      return { prefix: "@search", model: "searchgpt", icon: Search }
+      return { prefix: "@search", model: "openai/gpt-4o", icon: Search }
     } else if (content.startsWith("@code ")) {
-      return { prefix: "@code", model: "qwen-coder", icon: Code }
+      return { prefix: "@code", model: "qwen/qwen3-coder:free", icon: Code }
     } else if (content.startsWith("@imagine ")) {
       return { prefix: "@imagine", model: selectedImageModel, icon: ImageIcon }
     } else if (content.startsWith("@chart ")) {
@@ -323,7 +327,7 @@ export default function Chat({ isOpen, setIsOpen, activeChatId, onFork, chatTabs
       if (prefix === "@imagine") {
         response = `![Generated Image](https://pollinations.ai/p/${encodeURIComponent(messageContent)}?width=512&height=512&nologo=true&model=${model})`
       } else {
-        response = await sendMessage(updatedConversationHistory, model)
+        response = await sendMessage(updatedConversationHistory, model, openRouterKey)
       }
       if (response) {
         const aiMessage: Message = {
@@ -360,9 +364,13 @@ export default function Chat({ isOpen, setIsOpen, activeChatId, onFork, chatTabs
       }
     } catch (error: any) {
       let isTimeout = false
-      if (error && error.message && error.message.includes('524')) {
-        isTimeout = true
+      
+      if (error && error.message) {
+        if (error.message.includes('524') || error.message.includes('402')) {
+          isTimeout = true
+        }
       }
+      
       const errorMessage: Message = {
         id: (Date.now() + 3).toString(),
         content: isTimeout ? "The AI service timed out (524). Please try again or click Retry." : "Sorry, there was a problem connecting to the server.",
@@ -406,19 +414,20 @@ export default function Chat({ isOpen, setIsOpen, activeChatId, onFork, chatTabs
 
       // Ask the model for a short title
       const titlePrompt: Message[] = [
-        { id: "sys-title", role: "system", content: "You generate a single-word chat title. Rules: reply with exactly one word, no spaces, no punctuation or quotes. Prefer TitleCase. If multiple words are needed, merge them into one (e.g., MachineLearning). Reply with the title only." },
+        { id: "sys-title", role: "system", content: "You generate a single short word chat title. Rules: reply with exactly one descriptive word that captures the essence of the conversation, use Title Case, no punctuation or quotes. Make it specific and meaningful. Examples: 'Weather', 'Recipes', 'Coding', 'Travel'. Reply with the title only." },
         { id: "user-title", role: "user", content: `First message: ${firstUserMessageText}` },
       ]
-      const aiTitle = await sendMessage(titlePrompt, selectedTextModel)
+      const aiTitle = await sendMessage(titlePrompt, titleGenerationModel, openRouterKey)
       const cleaned = (aiTitle || "").replace(/["'`]/g, "").replace(/[\n\r]/g, " ").trim()
-      // Enforce single word: remove all non-alphanumeric characters
-      const singleWord = cleaned.replace(/[^A-Za-z0-9]+/g, "")
-      // Build a sane fallback as single word from the first user message
+      // Take only the first word and format it properly
+      const singleWord = cleaned.split(/\s+/)[0] || ""
+      const titleWord = singleWord.charAt(0).toUpperCase() + singleWord.slice(1).toLowerCase()
+      // Build a fallback from first user message (take first meaningful word)
       const tokens = (firstUserMessageText || "").match(/[A-Za-z0-9]+/g) || []
-      const fallbackSingle = tokens.length
-        ? tokens.slice(0, 2).map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join("")
-        : "NewChat"
-      const finalTitle = (singleWord || fallbackSingle).slice(0, 30)
+      const fallbackWord = tokens.length && tokens[0]
+        ? tokens[0].charAt(0).toUpperCase() + tokens[0].slice(1).toLowerCase()
+        : "Chat"
+      const finalTitle = (titleWord || fallbackWord).slice(0, 15)
 
       // Only rename if still default name to avoid overriding user edits
       const stillDefault = chatTabs.find((t) => t.id === activeChatId)?.name === "Chat"
@@ -428,7 +437,7 @@ export default function Chat({ isOpen, setIsOpen, activeChatId, onFork, chatTabs
     } catch {
       // Silently ignore title generation errors
     }
-  }, [chatTabs, activeChatId, selectedTextModel, setChatTabs])
+  }, [chatTabs, activeChatId, titleGenerationModel, setChatTabs])
 
   useEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {
@@ -510,6 +519,7 @@ export default function Chat({ isOpen, setIsOpen, activeChatId, onFork, chatTabs
           onFork={onFork}
           onSettingsOpen={() => setIsSettingsOpen(true)}
           hasMessages={hasMessages}
+          hasUserMessages={hasUserMessages}
           activeChatName={chatTabs.find(chat => chat.id === activeChatId)?.name || 'ArcGPT'}
         />
       </div>
@@ -584,6 +594,8 @@ export default function Chat({ isOpen, setIsOpen, activeChatId, onFork, chatTabs
         }}
         chatTabs={chatTabs}
         setChatTabs={setChatTabs}
+        openRouterKey={openRouterKey}
+        setOpenRouterKey={setOpenRouterKey}
       />
 
       {/* Clear Chat Confirm Dialog */}
