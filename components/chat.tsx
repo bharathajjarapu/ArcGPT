@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dialog"
 import { cn } from "@/lib/utils"
 import type { Message, ChatTab, MessageContent } from "@/types/chat"
-import { sendMessage } from "@/app/chat"
+import { sendMessage } from "@/app/api/chat"
 import { PromptSuggestions } from "@/components/interface/prompts"
 import { getCurrentTimeAndDate } from "@/app/time"
 import { Settings } from "./settings"

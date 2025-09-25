@@ -18,7 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Download, Upload, AlertCircle, Moon, Sun } from "lucide-react";
+import { Download, Upload, AlertCircle } from "lucide-react";
 import { ChatTab } from '@/types/chat';
 import { Textarea } from "@/components/ui/textarea";
 import { themes } from '@/lib/themes';
