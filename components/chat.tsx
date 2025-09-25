@@ -51,7 +51,7 @@ export default function Chat({ isOpen, setIsOpen, activeChatId, onFork, chatTabs
   const [greeting, setGreeting] = useState("")
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [systemPrompt, setSystemPrompt] = useState("")
-  const [selectedTextModel, setSelectedTextModel] = useState("openai")
+  const [selectedTextModel, setSelectedTextModel] = useState("openai/gpt-oss-20b:free")
   const [selectedImageModel, setSelectedImageModel] = useState("flux")
   const [selectedImages, setSelectedImages] = useState<Array<{id: string, url: string, name: string}>>([])
   const [isInitialized, setIsInitialized] = useState(false)

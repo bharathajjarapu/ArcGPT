@@ -4,9 +4,10 @@ import type { Message, MessageContent } from '@/types/chat'
 
 export async function fetchTextModels() {
   try {
-    const response = await fetch('https://text.pollinations.ai/models', {
+    const response = await fetch('https://openrouter.ai/api/v1/models', {
       method: 'GET',
       headers: {
+        'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
         'Content-Type': 'application/json',
       },
     });
@@ -23,7 +24,7 @@ export async function fetchTextModels() {
   }
 }
 
-export async function sendMessage(messages: Message[], textModel: string = "openai") {
+export async function sendMessage(messages: Message[], textModel: string = "openai/gpt-oss-20b:free") {
   try {
     // Convert messages to OpenAI format
     const openAIMessages = messages.map((message) => {
@@ -34,9 +35,18 @@ export async function sendMessage(messages: Message[], textModel: string = "open
         }
       }
       
+      // Handle assistant messages - always convert to string
+      if (message.role === 'assistant' || message.role === 'ai') {
+        return {
+          role: 'assistant' as const,
+          content: typeof message.content === 'string' ? message.content : JSON.stringify(message.content)
+        }
+      }
+      
+      // Handle user messages - can have images or be simple text
       return {
-        role: message.role === 'user' ? 'user' as const : 'assistant' as const,
-        content: message.content
+        role: 'user' as const,
+        content: message.content // Keep as-is for user messages to support images
       }
     });
 
@@ -44,15 +54,18 @@ export async function sendMessage(messages: Message[], textModel: string = "open
     const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
 
     try {
-      const response = await fetch('https://text.pollinations.ai/openai', {
+      const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
         method: 'POST',
         headers: {
+          'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
+          'HTTP-Referer': process.env.SITE_URL || '',
+          'X-Title': process.env.SITE_NAME || 'ArcGPT',
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           model: textModel,
           messages: openAIMessages,
-          max_tokens: 300,
+          max_tokens: 30000,
         }),
         signal: controller.signal,
       });
@@ -60,11 +73,23 @@ export async function sendMessage(messages: Message[], textModel: string = "open
       clearTimeout(timeoutId);
 
       if (!response.ok) {
+        const errorText = await response.text();
+        console.error('OpenRouter API Error:', response.status, errorText);
+        
+        try {
+          const errorData = JSON.parse(errorText);
+          if (errorData.error) {
+            throw new Error(`OpenRouter Error: ${errorData.error.message || errorData.error}`);
+          }
+        } catch (parseError) {
+          // If we can't parse the error, just throw the status
+        }
+        
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
       const data = await response.json();
-      return data.choices[0]?.message?.content || null;
+      return data.choices?.[0]?.message?.content || null;
     } catch (error: any) {
       clearTimeout(timeoutId);
       if (error.name === 'AbortError') {

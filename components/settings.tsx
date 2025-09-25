@@ -31,11 +31,9 @@ export const IMAGE_MODELS = [
   "turbo",
 ];
 
-// Default text models as fallback
-export const DEFAULT_TEXT_MODELS = [
-  "openai",
-  "mistral",
-  "gpt-5-nano",
+export const TEXT_MODELS = [
+  "openai/gpt-oss-20b:free",
+  "openai/gpt-oss-120b:free",
 ];
 
 interface SettingsProps {
@@ -70,9 +68,9 @@ export const Settings = ({
   const [activeTab, setActiveTab] = useState("profile");
   const [localProfileName, setLocalProfileName] = useState(profileName);
   const [localSystemPrompt, setLocalSystemPrompt] = useState(systemPrompt);
-  const [localTextModel, setLocalTextModel] = useState(selectedTextModel || "openai-fast");
+  const [localTextModel, setLocalTextModel] = useState(selectedTextModel || "openai/gpt-oss-20b:free");
   const [localImageModel, setLocalImageModel] = useState(selectedImageModel);
-  const [textModels, setTextModels] = useState<string[]>(DEFAULT_TEXT_MODELS);
+  const [textModels, setTextModels] = useState<string[]>(TEXT_MODELS);
   const [isLoadingModels, setIsLoadingModels] = useState(false);
   const [importError, setImportError] = useState<string | null>(null);
   const [textSelectOpen, setTextSelectOpen] = useState(false);
@@ -84,7 +82,7 @@ export const Settings = ({
       // Reset local state to current saved values when dialog opens
       setLocalProfileName(profileName);
       setLocalSystemPrompt(systemPrompt);
-      setLocalTextModel(selectedTextModel || "openai-fast");
+      setLocalTextModel(selectedTextModel || "openai/gpt-oss-20b:free");
       setLocalImageModel(selectedImageModel);
     } else {
       // Ensure all select dropdowns are closed when dialog is closed
@@ -93,43 +91,10 @@ export const Settings = ({
     }
   }, [isOpen, profileName, systemPrompt, selectedTextModel, selectedImageModel]);
 
+  // Initialize with fixed models - no need to fetch from API
   useEffect(() => {
-    const fetchModels = async () => {
-      setIsLoadingModels(true);
-      try {
-        const response = await fetch('/api/models');
-        if (response.ok) {
-          const data = await response.json();
-          let models: string[] = [];
-          const sourceArray = Array.isArray(data)
-            ? data
-            : (Array.isArray((data as any)?.models) ? (data as any).models : []);
-          if (Array.isArray(sourceArray)) {
-            models = sourceArray
-              .map((item: any) => {
-                if (typeof item === 'string') return item;
-                if (item && typeof item === 'object') {
-                  return item.id || item.name || item.model || item.slug || item.value || null;
-                }
-                return null;
-              })
-              .filter(Boolean);
-          }
-
-          // Ensure some sensible defaults are present
-          const ensure = ["openai", "mistral", "gpt-5-nano"];
-          const merged = Array.from(new Set([...(models || []), ...ensure]));
-          setTextModels(merged.length ? merged : DEFAULT_TEXT_MODELS);
-        }
-      } catch (error) {
-        console.error('Error fetching models:', error);
-        // Keep default models as fallback
-      } finally {
-        setIsLoadingModels(false);
-      }
-    };
-
-    fetchModels();
+    setTextModels(TEXT_MODELS);
+    setIsLoadingModels(false);
   }, []);
 
   const handleSaveSettings = () => {
@@ -277,7 +242,7 @@ export const Settings = ({
       <DialogContent className="sm:max-w-[450px] bg-zinc-950 border border-zinc-800">
         <DialogTitle>Settings</DialogTitle>
         <DialogDescription>
-          Text & Image Models Powered by Pollinations.ai
+          Text Models by OpenRouter. Image Models by Pollinations.ai.
         </DialogDescription>
         <Tabs
           value={activeTab}
