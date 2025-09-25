@@ -49,6 +49,8 @@ interface SettingsProps {
   setProfileName: (name: string) => void;
   chatTabs: ChatTab[];
   setChatTabs: (chatTabs: ChatTab[]) => void;
+  openRouterKey: string;
+  setOpenRouterKey: (key: string) => void;
 }
 
 export const Settings = ({
@@ -64,17 +66,18 @@ export const Settings = ({
   setProfileName,
   chatTabs,
   setChatTabs,
+  openRouterKey,
+  setOpenRouterKey,
 }: SettingsProps) => {
   const [activeTab, setActiveTab] = useState("profile");
   const [localProfileName, setLocalProfileName] = useState(profileName);
   const [localSystemPrompt, setLocalSystemPrompt] = useState(systemPrompt);
   const [localTextModel, setLocalTextModel] = useState(selectedTextModel || "openai/gpt-oss-20b:free");
   const [localImageModel, setLocalImageModel] = useState(selectedImageModel);
+  const [localOpenRouterKey, setLocalOpenRouterKey] = useState(openRouterKey);
   const [textModels, setTextModels] = useState<string[]>(TEXT_MODELS);
   const [isLoadingModels, setIsLoadingModels] = useState(false);
   const [importError, setImportError] = useState<string | null>(null);
-  const [textSelectOpen, setTextSelectOpen] = useState(false);
-  const [imageSelectOpen, setImageSelectOpen] = useState(false);
   const { theme, isDark, setTheme, setIsDark, toggleDarkMode } = useTheme();
 
   useEffect(() => {
@@ -84,12 +87,9 @@ export const Settings = ({
       setLocalSystemPrompt(systemPrompt);
       setLocalTextModel(selectedTextModel || "openai/gpt-oss-20b:free");
       setLocalImageModel(selectedImageModel);
-    } else {
-      // Ensure all select dropdowns are closed when dialog is closed
-      setTextSelectOpen(false);
-      setImageSelectOpen(false);
+      setLocalOpenRouterKey(openRouterKey);
     }
-  }, [isOpen, profileName, systemPrompt, selectedTextModel, selectedImageModel]);
+  }, [isOpen, profileName, systemPrompt, selectedTextModel, selectedImageModel, openRouterKey]);
 
   // Initialize with fixed models - no need to fetch from API
   useEffect(() => {
@@ -102,10 +102,12 @@ export const Settings = ({
     setSystemPrompt(localSystemPrompt);
     setSelectedTextModel(localTextModel);
     setSelectedImageModel(localImageModel);
+    setOpenRouterKey(localOpenRouterKey);
     localStorage.setItem("profileName", localProfileName);
     localStorage.setItem("systemPrompt", localSystemPrompt);
     localStorage.setItem("textModel", localTextModel || "openai");
     localStorage.setItem("imageModel", localImageModel);
+    localStorage.setItem("openRouterKey", localOpenRouterKey);
     if (typeof window !== 'undefined' && (window as any).showToast) {
       (window as any).showToast("Settings saved successfully.", "success");
     }
@@ -114,15 +116,12 @@ export const Settings = ({
 
   const handleDialogChange = (open: boolean) => {
     if (!open) {
-      // Close any open select dropdowns immediately
-      setTextSelectOpen(false);
-      setImageSelectOpen(false);
-      
       // Reset local state to saved values when dialog closes without saving
       setLocalProfileName(profileName);
       setLocalSystemPrompt(systemPrompt);
       setLocalTextModel(selectedTextModel || "openai-fast");
       setLocalImageModel(selectedImageModel);
+      setLocalOpenRouterKey(openRouterKey);
       
       // Reset the active tab to profile
       setActiveTab("profile");
@@ -140,6 +139,7 @@ export const Settings = ({
           systemPrompt: localStorage.getItem("systemPrompt") || "",
           textModel: localStorage.getItem("textModel") || "openai",
           imageModel: localStorage.getItem("imageModel") || "flux",
+          openRouterKey: localStorage.getItem("openRouterKey") || "",
         },
         exportDate: new Date().toISOString(),
         version: "1.0"
@@ -205,6 +205,10 @@ export const Settings = ({
         if (importData.settings.imageModel) {
           localStorage.setItem("imageModel", importData.settings.imageModel);
           setSelectedImageModel(importData.settings.imageModel);
+        }
+        if (importData.settings.openRouterKey) {
+          localStorage.setItem("openRouterKey", importData.settings.openRouterKey);
+          setOpenRouterKey(importData.settings.openRouterKey);
         }
 
         // Import chat tabs and chat histories
@@ -358,6 +362,32 @@ export const Settings = ({
 
           <TabsContent value="settings" className="mt-1">
             <div className="grid gap-4 py-4">
+              {/* OpenRouter API Key */}
+              <div className="flex flex-col gap-3">
+                <Label htmlFor="openrouter-key">
+                  OpenRouter API Key
+                </Label>
+                <Input
+                  id="openrouter-key"
+                  type="password"
+                  value={localOpenRouterKey}
+                  onChange={(e) => setLocalOpenRouterKey(e.target.value)}
+                  placeholder="I'm Poor. Please use your API Key."
+                  className="w-full"
+                />
+                <div className="text-xs text-muted-foreground">
+                Get your free API key at 
+                  <a 
+                    href="https://openrouter.ai/keys" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-blue-400 hover:text-blue-300 underline ml-1"
+                  >
+                   openrouter.ai/keys
+                  </a>
+                </div>
+              </div>
+
               {/* Text Model field */}
               <div className="grid grid-cols-[auto,1fr] items-center gap-4">
                 <Label htmlFor="text-model">
@@ -367,8 +397,6 @@ export const Settings = ({
                   value={localTextModel}
                   onValueChange={setLocalTextModel}
                   disabled={isLoadingModels}
-                  open={textSelectOpen}
-                  onOpenChange={setTextSelectOpen}
                 >
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder={isLoadingModels ? "Loading models..." : "Select text model"} />
@@ -391,10 +419,8 @@ export const Settings = ({
                 <Select
                   value={localImageModel}
                   onValueChange={setLocalImageModel}
-                  open={imageSelectOpen}
-                  onOpenChange={setImageSelectOpen}
                 >
-                  <SelectTrigger id="image-model" className="w-full">
+                  <SelectTrigger className="w-full">
                     <SelectValue placeholder="Select image model" />
                   </SelectTrigger>
                   <SelectContent>

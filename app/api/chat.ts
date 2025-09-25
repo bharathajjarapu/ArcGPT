@@ -24,7 +24,7 @@ export async function fetchTextModels() {
   }
 }
 
-export async function sendMessage(messages: Message[], textModel: string = "openai/gpt-oss-20b:free") {
+export async function sendMessage(messages: Message[], textModel: string = "openai/gpt-oss-20b:free", userApiKey?: string) {
   try {
     // Convert messages to OpenAI format
     const openAIMessages = messages.map((message) => {
@@ -36,7 +36,7 @@ export async function sendMessage(messages: Message[], textModel: string = "open
       }
       
       // Handle assistant messages - always convert to string
-      if (message.role === 'assistant' || message.role === 'ai') {
+      if (message.role === 'ai') {
         return {
           role: 'assistant' as const,
           content: typeof message.content === 'string' ? message.content : JSON.stringify(message.content)
@@ -54,10 +54,13 @@ export async function sendMessage(messages: Message[], textModel: string = "open
     const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
 
     try {
+      // Use user's API key if provided, otherwise use environment key
+      const apiKey = userApiKey || process.env.OPENROUTER_API_KEY;
+      
       const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
+          'Authorization': `Bearer ${apiKey}`,
           'HTTP-Referer': process.env.SITE_URL || '',
           'X-Title': process.env.SITE_NAME || 'ArcGPT',
           'Content-Type': 'application/json',
@@ -75,6 +78,7 @@ export async function sendMessage(messages: Message[], textModel: string = "open
       if (!response.ok) {
         const errorText = await response.text();
         console.error('OpenRouter API Error:', response.status, errorText);
+        
         
         try {
           const errorData = JSON.parse(errorText);

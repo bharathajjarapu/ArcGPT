@@ -16,6 +16,7 @@ type ChatHeaderProps = {
   onFork: () => void
   onSettingsOpen: () => void
   hasMessages: boolean
+  hasUserMessages: boolean
   activeChatName: string
 }
 
@@ -27,6 +28,7 @@ export function ChatHeader({
   onFork,
   onSettingsOpen,
   hasMessages,
+  hasUserMessages,
   activeChatName
 }: ChatHeaderProps) {
   return (
@@ -40,11 +42,12 @@ export function ChatHeader({
         <SidebarIcon className="h-6 w-6" />
       </Button>
       <button
-        onClick={onNewChat}
-        className="text-xl font-semibold select-none hover:opacity-90 active:opacity-80 transition-opacity"
-        title="New Chat"
+        onClick={hasUserMessages ? onNewChat : undefined}
+        className="text-xl font-semibold select-none hover:opacity-90 active:opacity-80 transition-opacity group relative"
+        title={hasUserMessages ? "New Chat" : "ArcGPT"}
       >
-        {activeChatName === 'Chat' ? 'ArcGPT' : activeChatName}
+        <span className="hidden group-hover:inline">ArcGPT</span>
+        <span className="group-hover:hidden">{activeChatName}</span>
       </button>
       <div className="ml-auto flex items-center">
         <Button variant="ghost" size="icon" onClick={onClearChat} className="mr-2">
